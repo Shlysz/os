@@ -5,8 +5,8 @@ Team members:
 - [@Shlysz](github.com/shlysz)
 - [@R-oink](github.com/R-oink)
 - [@likely-dog](github.com/likely-dog)
-- [@](github.com/)
-- [@](github.com/)
+- [@tempure](github.com/tempure)
+- [@Mamumsy](github.com/Mamumsy)
 
 Todo list:
 - 进程管理
