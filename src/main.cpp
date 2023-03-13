@@ -2,10 +2,13 @@
 #include <memory>
 
 #include "process.h"
+#include "timer.h"
 
 
 int main() {
-    std::cout << "Hello World!" << std::endl;
+    while(1){
+
+    }
     return 0;    
 }
 
