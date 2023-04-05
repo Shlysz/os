@@ -1,11 +1,14 @@
 #include <iostream>
 #include <memory>
+<<<<<<< HEAD
 
 #include "process.h"
 
+=======
+#include"timer.h"
+>>>>>>> origin/Liyao
 
 int main() {
-    std::cout << "Hello World!" << std::endl;
-    return 0;    
+      
 }
 
