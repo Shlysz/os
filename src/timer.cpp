@@ -1,5 +1,3 @@
-<<<<<<< HEAD
-=======
 #include"timer.h"
 
 Timer::Timer()
@@ -23,4 +21,3 @@ void Timer::timer_handler()
 
 }
 
->>>>>>> 0cc22d5 (修改timer的框架)

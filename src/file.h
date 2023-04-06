@@ -66,7 +66,12 @@ public:
     FileNode*current;//当前节点
     unordered_map<FileNode*,File*>files;//文件表
 
-    FileSystem():root(new FileNode("/",0)){ root->parent= nullptr;};
+
+    FileSystem():root(new FileNode("/",0)){
+        root->parent= nullptr;
+        current=root;
+    };
+
 
     //TODO
     ~FileSystem(){ removeFileSystemTree(root);};//删除文件树
