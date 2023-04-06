@@ -53,7 +53,7 @@ bool FileSystem::remove(string name) {//删除文件或目录
         //删除该该文件或目录的索引
         parent->children.erase(remove_if(parent->children.begin(),parent->children.end(),[node](FileNode*tmp){return tmp==node;}),parent->children.end());
         removeFileSystemTree(node);
-
+        return true;
     }
     else return false;
 
@@ -86,7 +86,7 @@ bool FileSystem::mkdir(string name) {//创建目录
 }
 
 bool FileSystem::cd(string path) {
-    if(path=="/")
+    if(path=="/"||path.empty())
     {
         current=root;
         return true;
@@ -153,11 +153,13 @@ FileNode *FileSystem::findNode(FileNode *node, string path) {//找到指定节�
     }
     FileNode*res= nullptr;
     FileNode*tmp=current;//
+
     int i=0;
     for( i=0;i<result.size();i++)
     {
         int j=0;
-        for(j=0;j<tmp->children.size();j++){
+        int size=tmp->children.size();
+        for(j=0;j<size;j++){
            if(tmp->children[j]->name==result[i])//如果匹配
            {
                tmp=tmp->children[j];
@@ -165,13 +167,13 @@ FileNode *FileSystem::findNode(FileNode *node, string path) {//找到指定节�
                break;
            }
         }
-        if(j>=tmp->children.size()) return nullptr;
 
+        if(j>=size)
+            return nullptr;
     }
-    if(i>=result.size()) {
-        cout<<"findNode return"<<res->name<<endl;
-        return res;
-    }
+
+   if(i>=result.size())
+    return  res;
 
     return nullptr;
 }
