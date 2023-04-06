@@ -1,9 +1,24 @@
 #include <iostream>
-#include <memory>
-#include"timer.h"
-using namespace std;
-
+#include "globalVariable.h"
+#include "shell.h"
 int main() {
-    
-}
 
+    std::cout<<"请键入命令"<<std::endl;
+    while (true)
+    {
+        std::string command;
+        if(fs!= nullptr)
+            std::cout<<"root:"<<fs->current->name<<"/ $";
+        std::getline(std::cin,command);
+
+        sh->setOrder(command);
+
+        if(!sh->analyse()){
+            cout<<"命令解析错误,请输入正确命令"<<endl;
+        }
+        else cout<<"success"<<endl;
+    }
+
+
+    return 0;
+}
