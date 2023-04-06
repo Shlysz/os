@@ -1,7 +1,7 @@
 #include<iostream>
 #include<ctime>
 #include<unistd.h>
->>>>>>> Liyao
+
 using namespace std;
 
 #define defaultPeriod 3//默认时间片
