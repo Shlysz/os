@@ -8,3 +8,4 @@ FileSystem *fs=new FileSystem();
 
 shell*sh=new shell();
 
+DiskManager*disk=new DiskManager();

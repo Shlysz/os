@@ -5,31 +5,95 @@
 #include <cstring>
 #include <algorithm>
 #include "file.h"
+#include "globalVariable.h"
 #include <sstream>
+#include <utility>
 size_t File::read(void *buffer, size_t size) {//读指定文件
-    if(this->fcb->type!=1) {//不是文件类型
+    if(this->fcb->inode.type!=1) {//不是文件类型
         return 0;
     }
-    if(size>fcb->size)
+    //从数据库中读取数据
+    vector<int>block=disk->analysis(this->fcb->inode);
+    string data;
+    for(int i=0;i<block.size();i++)
     {
-        size=fcb->size;
+        data+=disk->getDiskInfo(block[i]);
     }
     memcpy(buffer,fcb->data,size);
     return size;
 }
 
 size_t File::write(void *buffer, size_t size) {//写指定文件
-    if(fcb->type!=1) return 0;
-    if(size>fcb->size)
+    if(disk->getremainSpace()<size) return 0;//磁盘空间不足
+    if(fcb->inode.type!=1) return 0;
+    //重新设置磁盘分配
+    disk->deleteDiskInfo(fcb->inode);
+    //重新设置inode
+    fcb->inode.size=size;
+    fcb->inode.link_num=1;
+    fcb->inode.type=1;
+    //根据大小确定类型
+    if(size<=4*3)
+        fcb->inode.indextype=1;
+    else if(size<=4*4)
+        fcb->inode.indextype=2;
+    else
+        fcb->inode.indextype=3;
+    for(int i=0;i<3;i++)
+    fcb->inode.direct_blocks[i]=-1;
+    if(fcb->inode.indextype) free(fcb->inode.indirect_block);
+    for(auto i:fcb->inode.double_indirect_block) free(i);
+    fcb->inode.indirect_block= nullptr;
+    for(auto i:fcb->inode.double_indirect_block) i= nullptr;
+    vector<int>freeBlock = disk->getNullDiskTrack();
+    //根据类型分配磁盘
+    if(fcb->inode.indextype==1)
     {
-        size=fcb->size;
+        //向上取整
+
+        for(int i=0;i<(size-1)/4+1;i++)
+        {
+            fcb->inode.direct_blocks[i]=freeBlock[i];
+        }
+
     }
+    else if(fcb->inode.indextype==2)
+    {
+        fcb->inode.indirect_block=new int [4];
+        for(int i=0;i<4;i++)
+        {
+            fcb->inode.indirect_block[i]=freeBlock[i];
+        }
+    }
+    else if(fcb->inode.indextype==3)
+    {
+        //根据size判断需要几个二级索引块
+        int num=(size-1)/16+1;
+        for(int i=0;i<num-1;i++)
+        {
+            fcb->inode.double_indirect_block[i]=new int [4];
+            for(int j=0;j<4;j++)
+            {
+                fcb->inode.double_indirect_block[i][j]=freeBlock[i*4+j];
+            }
+        }
+        //最后一个二级索引块
+        fcb->inode.double_indirect_block[num-1]=new int [4];
+        for(int i=0;i<(size-1)%16+1;i++)
+        {
+            fcb->inode.double_indirect_block[num-1][i]=freeBlock[(num-1)*4+i];
+        }
+    }
+    //将数据写入数据库
+    disk->diskAllocation(fcb->inode,buffer);
+    //修改inode
+    fcb->inode.modify_time=time(nullptr);
     memcpy(fcb->data,buffer,size);
     return size;
 }
 
 File *FileSystem::open(string name) {//打开文件
-    FileNode*node=findNode(current,name);//从当前目录寻找文件
+    FileNode*node=findNode(current,std::move(name));//从当前目录寻找文件
     if(node && files.count(node)){
         return files[node];
     }
@@ -40,12 +104,14 @@ File *FileSystem::open(string name) {//打开文件
 
 
 bool FileSystem::remove(string name) {//删除文件或目录
-    FileNode*node= findNode(current,name);//找到删除的节点
+    FileNode*node= findNode(current,std::move(name));//找到删除的节点
     if(node)
     {
        auto it= files.find(node);
+
        if(it !=files.end())
        {
+           disk->deleteDiskInfo(it->second->fcb->inode);//删除磁盘分配
            delete it->second;
            files.erase(it);
        }
@@ -63,7 +129,9 @@ bool FileSystem::create(string name, size_t size) {//创建文件
     if(!findNode(current,name)){
         FileNode*node=new FileNode(name,1);
         node->parent=current;
-        FileControlBlock*fcb=new FileControlBlock(1,size);
+        Inode inode;
+        inode.type=1;
+        FileControlBlock*fcb=new FileControlBlock(inode);
         files[node]=new File(node,fcb);
         current->children.push_back(node);
         return true;
@@ -117,9 +185,7 @@ void FileSystem::ls() {//展示当前目录下所有文件和字母录
     }
 }
 //TODO
-void FileSystem::deleteFileSystemTree(FileNode *node) {
 
-}
 
 void FileSystem::removeFileSystemTree(FileNode *node) {
     if(node->children.size()==0)

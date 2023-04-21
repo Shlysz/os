@@ -40,7 +40,7 @@ bool shell::runFileOrder(const vector<string> &fileorder) {
     }
     if (fileorder[1] == "create") {
         if (fileorder.size() < 4 || fileorder.size() >= 5) return false;
-        if (fs->create(fileorder[2], stoi(fileorder[3]))) return true;
+        if (fs->create(fileorder[2]) )return true;
         else return false;
     }
     if (fileorder[1] == "cd") {
@@ -69,10 +69,8 @@ bool shell::runFileOrder(const vector<string> &fileorder) {
         cout << "input content: " << endl;
         File *file = fs->open(fileorder[2]);
         char *buffer;
-        buffer = new char[file->fcb->size];
-        cout << "input content: " << endl;
-        //输入到buffer
-        cin.getline(buffer, file->fcb->size);
+        buffer = new char[64];
+        cin.getline(buffer, 64);
         size_t length = strlen(buffer) + 1;
         file->write(buffer, length);
         delete[] buffer;
@@ -83,8 +81,8 @@ bool shell::runFileOrder(const vector<string> &fileorder) {
     {
         if(fileorder.size()<3||fileorder.size()>=4) return false;
         File*file=fs->open(fileorder[2]);
-        char*buffer=new char[file->fcb->size];
-        file->read(buffer,file->fcb->size);
+        char*buffer=new char[file->fcb->inode.size];
+        file->read(buffer,file->fcb->inode.size);
         cout<<buffer<<endl;
         delete[]buffer;
         return true;
