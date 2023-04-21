@@ -88,7 +88,7 @@ size_t File::write(void *buffer, size_t size) {//写指定文件
     disk->diskAllocation(fcb->inode,buffer);
     //修改inode
     fcb->inode.modify_time=time(nullptr);
-    memcpy(fcb->data,buffer,size);
+    //memcpy(fcb->data,buffer,size);
     return size;
 }
 
@@ -125,13 +125,15 @@ bool FileSystem::remove(string name) {//删除文件或目录
 
 }
 
-bool FileSystem::create(string name, size_t size) {//创建文件
+bool FileSystem::create(string name) {//创建文件
     if(!findNode(current,name)){
-        FileNode*node=new FileNode(name,1);
+        auto*node=new FileNode(name,1);
         node->parent=current;
         Inode inode;
         inode.type=1;
-        FileControlBlock*fcb=new FileControlBlock(inode);
+        inode.size=0;
+        inode.indextype=1;
+        auto*fcb=new FileControlBlock(inode);
         files[node]=new File(node,fcb);
         current->children.push_back(node);
         return true;

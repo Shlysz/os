@@ -31,12 +31,13 @@ struct Inode {
         for(int & direct_block : direct_blocks) direct_block = -1;
         indirect_block= nullptr;
         indextype=-1;
-        for(auto i:double_indirect_block) i= nullptr;
+        for(auto &i:double_indirect_block) i= nullptr;
         //double_indirect_block = nullptr;
     };
     ~Inode(){
         if(indirect_block) free(indirect_block);
-        for(auto i:double_indirect_block) if(i) free(i);
+
+        for(auto i:double_indirect_block) if(i!= nullptr) free(i);
     }
 };
 
@@ -104,7 +105,7 @@ public:
     void ls();//展示当前目录下的文件/子目录
     bool cd(string path);//转到指定目录
     bool mkdir(string name);//创建目录
-    bool create(string name,size_t size);//创建文件
+    bool create(string name);//创建文件
     bool remove(string name);//删除
     File*open(string name);//打开指定文件
 private:

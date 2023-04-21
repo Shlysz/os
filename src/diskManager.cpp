@@ -1,5 +1,4 @@
 #include <cstring>
-#include "diskManager.h"
 #include "globalVariable.h"
 
 DiskManager::DiskManager() {
@@ -9,6 +8,12 @@ DiskManager::DiskManager() {
     //找到磁盘的剩余空间
     this->remainSpace= mysql->execSelectSQL("select * from disktrack where state=0").size()*4;
     this->init();
+    //打印bitmap
+    cout<<"bitmap"<<endl;
+    for(int i=0;i<this->maxspace/4;i++)
+    {
+        cout<<this->bitmap[i]<<" ";
+    }
 }
 
 DiskManager::~DiskManager() {
@@ -24,11 +29,11 @@ void DiskManager::init() {
         this->bitmap[i]=0;
     }
     //获取磁盘的空闲磁道号
-    vector<vector<string>> res=mysql->execSelectSQL("select * from disktrack where state=0");
+    vector<vector<string>> res=mysql->execSelectSQL("select id from disktrack where state=1");
+    //设置bitmap
     for(int i=0;i<res.size();i++)
     {
-        //设置bitmap
-        this->bitmap[stoi(res[i][0])/4]=1;
+        this->bitmap[stoi(res[i][0])-1]=1;
     }
 }
 
@@ -52,7 +57,7 @@ vector<int> DiskManager::getNullDiskTrack() {
     {
         if(this->bitmap[i]==0)
         {
-            diskTrack.push_back(i);
+            diskTrack.push_back(i+1);
         }
     }
     return diskTrack;
@@ -63,7 +68,9 @@ bool DiskManager::diskAllocation(Inode inode, void *data) {
     //将data分为每四个字节的大小
     vector<string>dataBlock;
     string temp;
-    for(int i=0;i<sizeof(data);i++)
+    char*tmp=(char*)data;
+
+    for(int i=0;i<strlen(tmp);i++)
     {
         temp+=((char*)data)[i];
         if(temp.size()==4)
@@ -77,10 +84,18 @@ bool DiskManager::diskAllocation(Inode inode, void *data) {
     //将dataBlock写入磁盘
     for(int i=0;i<dataBlock.size();i++)
     {
+        string info = dataBlock[i].substr(0, 4);
         //更新磁盘
-        mysql->execUpdateSQL("update disktrack set state=1,info='"+dataBlock[i]+"' where id="+to_string(block[i]));
+        if(mysql->execUpdateSQL("update disktrack set state=1,info='"+info+"' where id="+to_string(block[i])+";"))
+        {
+            cout<<"更新磁盘成功"<<endl;}
+        else
+        {
+            cout<<"更新磁盘失败"<<endl;
+            return false;
+        }
         //更新bitmap
-        this->bitmap[block[i]]=1;
+        this->bitmap[block[i]-1]=1;
     }
 
     //更新剩余空间
@@ -97,7 +112,7 @@ bool DiskManager::deleteDiskInfo(Inode inode) {
         //更新磁盘
         mysql->execUpdateSQL("update disktrack set state=0,info='' where id="+to_string(block[i]));
         //更新bitmap
-        this->bitmap[block[i]]=0;
+        this->bitmap[block[i]-1]=0;
     }
     //更新剩余空间
     this->remainSpace+=block.size()*4;
@@ -114,20 +129,20 @@ int DiskManager::getremainSpace() {
 
 vector<int> DiskManager::analysis(Inode inode) {
     vector<int>diskTrack;
-    if(inode.indextype==0) //直接块
+    if(inode.indextype==1) //直接块
     {
         for(int direct_block : inode.direct_blocks)
             if(direct_block!=-1)
                 diskTrack.push_back(direct_block);
     }
-    else if(inode.indextype==1) //一级块
+    else if(inode.indextype==2) //一级块
     {
         //获取一级块的内容
       for(int i=0;i<4;i++)
         if(inode.indirect_block[i]!=-1)
             diskTrack.push_back(inode.indirect_block[i]);
     }
-    else if(inode.indextype==2) //二级块
+    else if(inode.indextype==3) //二级块
     {
         //获取一级块的内容
         for(auto & i : inode.double_indirect_block)

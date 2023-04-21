@@ -39,7 +39,7 @@ bool shell::runFileOrder(const vector<string> &fileorder) {
         else return false;
     }
     if (fileorder[1] == "create") {
-        if (fileorder.size() < 4 || fileorder.size() >= 5) return false;
+        if (fileorder.size() < 3 || fileorder.size() >= 4) return false;
         if (fs->create(fileorder[2]) )return true;
         else return false;
     }
@@ -66,12 +66,14 @@ bool shell::runFileOrder(const vector<string> &fileorder) {
     if (fileorder[1] == "write") {
         if (fileorder.size() < 3 || fileorder.size() >= 4) return false;
         //输入内容
-        cout << "input content: " << endl;
+
         File *file = fs->open(fileorder[2]);
+        if(file== nullptr) return false;
+        cout<<"input:"<<endl;
         char *buffer;
         buffer = new char[64];
         cin.getline(buffer, 64);
-        size_t length = strlen(buffer) + 1;
+        size_t length = strlen(buffer) ;
         file->write(buffer, length);
         delete[] buffer;
         return true;

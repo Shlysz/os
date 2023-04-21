@@ -71,7 +71,9 @@ vector<vector<string>> mysqlConfig::getRes()
         vector<string> rowVec;
         for(int j=0;j<num_fields;j++)
         {
+            if(row[j]!=NULL)
             rowVec.push_back(row[j]);
+            else rowVec.push_back("");
         }
         resVec.push_back(rowVec);
     }

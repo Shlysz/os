@@ -1,6 +1,7 @@
 //磁盘调度
-#include"mysqlConfig.h"
 #include<file.h>
+#include "mysqlConfig.h"
+
 class DiskManager {
 public:
     DiskManager();
