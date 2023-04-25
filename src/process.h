@@ -1,4 +1,3 @@
-#pragma once
 #include "file.h"
 
 //进程管理中的宏
@@ -9,8 +8,8 @@
 #define MAX_PROC       5 // 最大可调度的进程数量
 
 //定义各种状态代表的数值
-#define int PRIORITY
-#define int PSTATE       //线程状态
+#define PRIORITY int
+#define PSTATE int       //线程状态
 #define CREATE         0 //创建
 #define READY          1 //就绪
 #define RUN            2 //运行
@@ -43,14 +42,14 @@ public:
     PCB pcb;                 // PCB表
 
     int createProcess();     // 创建线程对象
-    int PCB(int pid, PRIORITY pri, PSTAT sta) : process_id(pid), priority(pri), status(sta){}
-    int get_pid() const { return process_id; }
-    int get_priority() const { return priority; }
-    int get_status() const { return status; }
-    void set_priority(int pri) { priority = pri; }
-    void set_status(PSTATE sta) { status = sta; }
-    void suspend() { status = SUSPENDED; }
-    void resume() { status = READY; }
-    void terminate() { status = TERMINATED; }
+    int get_pid() const { return pcb.pid; }
+    int get_priority() const { return pcb.priority; }
+    int get_status() const { return pcb.state; }
+    void set_PCB(int pid, PRIORITY pri, PSTATE sta) {pcb.pid = pid, pcb.priority = pri, pcb.state = sta;}
+    void set_priority(int pri) { pcb.priority = pri; }
+    void set_status(PSTATE sta) { pcb.state = sta; }
+    void suspend() { pcb.state = SUSPEND; }
+    void resume() { pcb.state = READY; }
+    void terminate() { pcb.state = TERMINATED; }
     //...
 };
