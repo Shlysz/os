@@ -1,12 +1,14 @@
 #include <iostream>
-<<<<<<< HEAD
 #include <memory>
 #include "process.h"
 #include "timer.h"
-=======
 #include "globalVariable.h"
 #include "shell.h"
+#include "param.h"
 int main() {
+
+    
+
 
     std::cout<<"请键入命令"<<std::endl;
     while (true)
@@ -17,7 +19,6 @@ int main() {
         std::getline(std::cin,command);
 
         sh->setOrder(command);
->>>>>>> master
 
         if(!sh->analyse()){
             cout<<"命令解析错误,请输入正确命令"<<endl;
