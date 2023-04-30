@@ -7,40 +7,68 @@
 
 #include <vector>
 #include <unordered_map>
-#include "iostream"
+#include <iostream>
 using  namespace std;
+
+//新增inode结构
+struct Inode {
+    time_t create_time; // 创建时间
+    time_t modify_time; // 修改时间
+    size_t size; // 文件大小
+    int type; // 文件类型 0-目录, 1-文件, 2-链接
+    int link_num; // 链接数
+    int direct_blocks[3]; // 直接块索引
+    int* indirect_block; // 一次间接块索引
+    int* double_indirect_block[4]; // 二次间接块索引
+    int indextype;//索引类型
+
+    Inode(){
+        create_time = time(nullptr);
+        modify_time = create_time;
+        size = 0;
+        type = 0;
+        link_num = 0;
+        for(int & direct_block : direct_blocks) direct_block = -1;
+        indirect_block= nullptr;
+        indextype=-1;
+        for(auto &i:double_indirect_block) i= nullptr;
+        //double_indirect_block = nullptr;
+    };
+    ~Inode(){
+        if(indirect_block) free(indirect_block);
+
+        for(auto i:double_indirect_block) if(i!= nullptr) free(i);
+    }
+};
+
 
 //文件节点
 struct FileNode
 {
-
     string name;//文件名字
     vector<FileNode*>children;//子节点
     FileNode*parent;
     int type;//文件类型, 0表示目录,1表示文件,2表示链接
+
     //其他属性
-    FileNode(string name,int type):name(name),type(type){};
+    FileNode(string name,int type):name(name),type(type){
+        //inode.double_indirect_block = nullptr;
+    };
 };
 
 //fcb
 class FileControlBlock
 {
 public:
-    int type;//文件类型
-    size_t size;//文件大小
+    Inode inode;//inode结构
     void*data;//数据
     //其他属性
 
-    FileControlBlock(int type,size_t size):type(type),size(size){
-        if(type==1)
-        //这里可能要加入对磁盘存储的判断,如果磁盘没有这这么多空间,可能不能创建
-            //TODO
-        data=malloc(size);
-        else data=nullptr;
+    FileControlBlock(Inode inode):inode(inode){
+      
     };
     ~FileControlBlock(){
-        if(type==1)
-            free(data);
+       
     }
 };
 
@@ -66,12 +94,10 @@ public:
     FileNode*current;//当前节点
     unordered_map<FileNode*,File*>files;//文件表
 
-
     FileSystem():root(new FileNode("/",0)){
         root->parent= nullptr;
         current=root;
     };
-
 
     //TODO
     ~FileSystem(){ removeFileSystemTree(root);};//删除文件树
@@ -79,7 +105,7 @@ public:
     void ls();//展示当前目录下的文件/子目录
     bool cd(string path);//转到指定目录
     bool mkdir(string name);//创建目录
-    bool create(string name,size_t size);//创建文件
+    bool create(string name);//创建文件
     bool remove(string name);//删除
     File*open(string name);//打开指定文件
 private:
@@ -94,5 +120,4 @@ private:
 
 
 #endif //FILESYSTEM_FILE_H
-
 

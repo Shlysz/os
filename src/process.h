@@ -1,6 +1,8 @@
-#include "file.h"
+#include <stdbool.h>
 #include "memory.h"
+#include "file.h"
 #include "time.h"
+
 
 //进程管理中的宏
 #define TIME_SLICE   200 // 时间片大小
@@ -18,12 +20,25 @@ typedef int PSTATE;      //线程状态
 #define SUSPEND        3 //阻塞挂起
 #define TERMINATED     4 //死亡结束
 
+//处理器
+struct CentralProcessingUnit {
+    unsigned int eax;
+    unsigned int ebx;
+    unsigned int ecx;
+    unsigned int edx;
+    unsigned int pc;
+} CPU;
 
-
+struct ShareResource {
+    bool using_eax;
+    bool using_ebx;
+    bool using_ecx;
+    bool using_edx;
+    BYTE *share_addr;//共享内存首地址
+};
 
 //PCB表结构
-typedef struct ProgramControlBlock
-{
+typedef struct ProgramControlBlock {
 
     int pid;            // pid
     int slice_cnt;      // 使用过的时间片数量
@@ -34,17 +49,27 @@ typedef struct ProgramControlBlock
     int pagetable_len;  // 页表长度
     int state;          // 进程状态
     int priority;       // 优先级
+
     std::string name;   // 进程名称
     struct ProgramControlBlock *parent; // 父进程
     /*这里应该补充打开文件，用一个结构ofile来保存所有在这个进程打开的文件*/
+    /*还得有一个变量指向当前进程的工作目录*/
 } PCB;
 
 class Process {
 public:
     //进程需要用的变量以及函数
-    PCB pcb;                  // PCB表
+    PCB pcb;                  // PCB表    
 
-    void createProcess();     // 创建线程对象
+    //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
+    void create();            // 创建线程对象（进入就绪）
+    void wait();              // 由运行状态进程挂起
+    void wakeup();            // 唤醒挂起进程
+    void terminate();         // 终结进程 
+    void 
+
+    
+    //调试用的一些进程函数,主要是方便修改进而调试程序
     int get_pid() const { return pcb.pid; }
     int get_priority() const { return pcb.priority; }
     int get_status() const { return pcb.state; }
@@ -53,9 +78,6 @@ public:
     void set_status(PSTATE sta) { pcb.state = sta; }
     void suspend() { pcb.state = SUSPEND; }
     void resume() { pcb.state = READY; }
-    void terminate() { pcb.state = TERMINATED; }
-
-
     //...
 };
 
