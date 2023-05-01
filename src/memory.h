@@ -2,29 +2,32 @@
 #include "file.h"
 #define PAGESIZE 1024
 #define MEMORYSIZE 4*1024*PAGESIZE
-#define page_set unsigned char
+#define page_set unsigned int
 typedef unsigned char BYTE ;
 typedef unsigned int v_address;
 typedef unsigned int p_address;
-//å…±32é¡µï¼ŒåŒ…æ‹¬2é¡µçš„PCBï¼Œ1é¡µä¸­æ–­å‘é‡è¡¨ï¼Œ1é¡µç³»ç»Ÿè®¾å¤‡è¡¨ï¼Œ5é¡µé¡µè¡¨ï¼Œ23é¡µç”¨æˆ·è¡¨
-// #define PCBSIZE 2*1024//PCBè¡¨
-// #define INTERRUPTSIZE 1024 //ä¸­æ–­å‘é‡è¡¨
-// #define SYSTEMSIZE 1024 //ç³»ç»Ÿè®¾å¤‡è¡¨
-// #define FLAMESIZE 5*1024//é¡µè¡¨
-// #define USERSIZE 23*1024//ç”¨æˆ·ä»£ç æ®µè¡¨
+//¹²32Ò³£¬°üÀ¨2Ò³µÄPCB£¬1Ò³ÖĞ¶ÏÏòÁ¿±í£¬1Ò³ÏµÍ³Éè±¸±í£¬5Ò³Ò³±í£¬23Ò³ÓÃ»§±í
+// #define PCBSIZE 2*1024//PCB±í
+// #define INTERRUPTSIZE 1024 //ÖĞ¶ÏÏòÁ¿±í
+// #define SYSTEMSIZE 1024 //ÏµÍ³Éè±¸±í
+// #define FLAMESIZE 5*1024//Ò³±í
+// #define USERSIZE 23*1024//ÓÃ»§´úÂë¶Î±í
+
 
 class pagetable{
 private:
-    int page_num;
-    bool IsUsed;
-    page_set virtual_page[PAGESIZE];
-    page_set physical_page[PAGESIZE];
-    pagetable *page;
+    int page_num;//Ò³ºÅ
+    bool IsUsed;//¸ÃÒ³ÊÇ·ñ±»ÓÃ
+    bool IsReadonly;//¸ÃÒ³ÊÇ·ñÖ»¶Á
+    bool IsDirty ; //¸ÃÒ³ÊÇ·ñ±»ĞŞ¸Ä
+    page_set virtual_page[PAGESIZE];//ĞéÄâÄÚ´æµØÖ·Ò³£¬×î´ó´¢Á¿Îªpagetable£»
+    page_set physical_page[PAGESIZE];//ÎïÀíÄÚ´æµØÖ·Ò³
+    pagetable *pagenext;
 public:
     void init();
     int read(int page_num,bool IsUsed,v_address address,pagetable *page);
-    int write(int page_num,bool IsUsed,pagetable *page);
-    int Findphyaddr(int page_num,bool IsUsed,v_address address,pagetable *page);
+    int write(int page_num,bool IsUsed,bool IsReadonly,bool IsDirty, pagetable *page);
+    int Findphyaddr(int page_num,bool IsUsed,v_address address,pagetable *page);//Éè¼ÆÑ°Ö·Ëã·¨
     int Free(int page_num,pagetable *page);
 };
 
