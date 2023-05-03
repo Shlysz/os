@@ -67,15 +67,15 @@ public:
     PCB pcb;                  // PCB表    
 
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
-    void create();            // 创建线程对象（进入就绪）
-    void wait();              // 由运行状态进程挂起
-    void wakeup();            // 唤醒挂起进程
-    void readyforward();      // 就绪状态进一步运行或者先挂起
-    void terminate();         // 终结进程 
-    void wirte();             // 将数据写回内存
-    void read();              // 读取内存数据
-    void init();              // 内存占用初始化
-    void free();              // 内存资源的释放
+    void create();                     // 创建线程对象（进入就绪）
+    void wait(Process &proc);          // 由运行状态进程挂起
+    void wakeup(Process &proc);        // 唤醒挂起进程
+    void readyforward(Process &proc);  // 就绪状态进一步运行或者先挂起
+    void terminate(Process &proc);     // 终结进程 
+    //void wirte();                       将数据写回内存
+    //void read();                        读取内存数据
+    //void init();                        内存占用初始化
+    //void free();                        内存资源的释放
     
     //调试用的一些进程函数,主要是方便修改进而调试程序
     int get_pid() const { return pcb.pid; }
