@@ -1,22 +1,29 @@
 #include "memory.h"
 
-void pagetable::init(){
-
+void init(){
+//连续分页
 }
 
 
-int pagetable::read(int page_num,bool IsUsed,v_address address,pagetable *page){
+int read(int page_num,bool IsUsed,v_address address,pagetable *page){
 
 
 }
-int pagetable::write (int page_num,bool IsUsed,bool IsReadonly,bool IsDirty, pagetable *page){
+int write (int page_num,bool IsUsed,bool IsReadonly,bool IsDirty, pagetable *page){
 
 
 }
-int pagetable::Findphyaddr(int page_num,bool IsUsed,v_address address,pagetable *page){
+int Findphyaddr(int page_num,bool IsUsed,v_address address,pagetable *page){
 
+
+    TLB_renew();
 }
-int pagetable::Free(int page_num,pagetable *page){
+int Free(int page_num,pagetable *page){
 
     
+}
+
+int TLB_renew(TLB tlb){
+
+
 }
