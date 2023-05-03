@@ -37,14 +37,31 @@ typedef struct ProgramControlBlock
 
 } PCB;
 
+// 设备控制表
 typedef struct DeviceControlTable{
-    int size;
-    DCTItem DCTitem[MAX_DCT_LEN];
+    int size;                       // 当前设备表长度
+    DCTItem DCTitem[MAX_DCT_LEN];   // 设备列表以及定义最多设备数量
 }DCT, * DCTptr;
 
+// 设备控制表项
 typedef struct DeviceControlTableItem{
-    unsigned char deviceID;
-    bool busy;
-    int usingPid;
-    PCB wPid[MAX_DCT_LEN];
+    int deviceID;               // 设备ID
+    bool busy;                  // 设备是否占用
+    int usingPid;               // 占用设备的进程ID 0代表空闲
+    wPro wpro;                  // 等待进程队列     可为空
 }DCTItem, * DCTItemptr;
+
+// 等待队列信息
+typedef struct waitingPro{
+    int size;                   // 等待进程数量
+    PCB waitingHead;            // 队列头
+    PCB waitingEnd;             // 队列尾
+    wpList wplist;              // 队列
+}wPro;
+// 等待队列
+typedef struct waitingProList{
+    PCB process;
+    struct waitingProList * next;
+}wpList;
+
+// 
