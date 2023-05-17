@@ -2,6 +2,9 @@
 *.d
 .DS_Store
 
+# binary
+os
+
 # Folders
 .idea
 .vscode

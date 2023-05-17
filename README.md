@@ -1,9 +1,18 @@
-#### 2023 Spring BUPT OS Course Project
+## Operating System Simulator
 
-Team members:
-[@livrth](github.com/livrth)
-[@Shlysz](github.com/shlysz)
-[@R-oink](github.com/R-oink)
-[@likely-dog](github.com/likely-dog)
-[@tempure](github.com/tempure)
-[@Mamumsy](github.com/Mamumsy)
+2023 Spring BUPT OS Curriculum Design
+
+### Dependencies
+
+- GNU C Compiler
+- Unix environment
+
+### Build & Compile
+
+```cpp
+cd src/
+g++ -std=c++17 -O2 *.cpp -o os && ./os
+```
+
+### License
+The GNU General Public License Version 3
