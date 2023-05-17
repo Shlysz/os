@@ -1,13 +1,17 @@
 # Prerequisites
 *.d
-.DS_Store
 
-# binary
+# Misc
+.DS_Store
+CMakeLists.txt
+
+# Binary
 os
 
 # Folders
 .idea
 .vscode
+cmake-build-debug
 
 # Compiled Object files
 *.slo
