@@ -1,6 +1,5 @@
 #include "process.h"
 #include "memory.h"
-#include "param.h"
 
 void CPU_init() { // CPU初始化
     CPU.eax = 0;
