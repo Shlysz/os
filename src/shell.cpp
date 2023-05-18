@@ -80,7 +80,9 @@ int Shell::parse() {
         //return memory剩余的大小
         std::cout << "Size of free memory is:"<<endl;
         return 1;
-    }else if (params == "exit") {  // 退出程序
+    } else if (params == "fork") {  // 创建一个进程
+        /*产生一个中断信号，进入中断*/
+    } else if (params == "exit") {  // 退出程序
         return 0;
     } else {  // 其余未实现的使用默认 Linux 系统 bash 功能
         system(params.c_str());
