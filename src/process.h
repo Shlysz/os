@@ -1,5 +1,6 @@
 #include <stdbool.h>
 #include <queue>
+#include <pthread.h>
 #include "memory.h"
 #include "file.h"
 #include "time.h"
@@ -67,7 +68,7 @@ public:
     PCB pcb;                  // PCB表    
 
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
-    void create();                     // 创建线程对象（进入就绪）
+    int create();                     // 创建线程对象（进入就绪）
     void wait(Process &proc);          // 由运行状态进程挂起
     void wakeup(Process &proc);        // 唤醒挂起进程
     void readyforward(Process &proc);  // 就绪状态进一步运行或者先挂起

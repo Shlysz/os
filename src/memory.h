@@ -10,27 +10,27 @@ typedef unsigned int p_address;
 
 
 typedef struct TLBTHING{
-    int TLB_num;//TLBĞòºÅ
-    page_set pageNO[TLBSIZE];//ĞéÄâÄÚ´æµØÖ·Ò³£¬×î´ó´¢Á¿ÎªTLBSIZE£»
+    int TLB_num;//TLBåºå·
+    page_set pageNO[TLBSIZE];//è™šæ‹Ÿå†…å­˜åœ°å€é¡µï¼Œæœ€å¤§å‚¨é‡ä¸ºTLBSIZEï¼›
     page_set frameNO[TLBSIZE];
 	int is_used[TLBSIZE]={0};
     int USED_TIME[TLBSIZE]={0};
 }TLB;
 
 struct pagetable{
-    int page_num;//Ò³ºÅ
-    bool IsUsed;//¸ÃÒ³ÊÇ·ñ±»ÓÃ
-    bool IsReadonly;//¸ÃÒ³ÊÇ·ñÖ»¶Á
-    bool IsDirty ; //¸ÃÒ³ÊÇ·ñ±»ĞŞ¸Ä
-    page_set virtual_page[PAGESIZE];//ĞéÄâÄÚ´æµØÖ·Ò³£¬×î´ó´¢Á¿Îªpagesize£»
-    page_set physical_page[PAGESIZE];//ÎïÀíÄÚ´æµØÖ·Ò³
+    int page_num;//é¡µå·
+    bool IsUsed;//è¯¥é¡µæ˜¯å¦è¢«ç”¨
+    bool IsReadonly;//è¯¥é¡µæ˜¯å¦åªè¯»
+    bool IsDirty ; //è¯¥é¡µæ˜¯å¦è¢«ä¿®æ”¹
+    page_set virtual_page[PAGESIZE];//è™šæ‹Ÿå†…å­˜åœ°å€é¡µï¼Œæœ€å¤§å‚¨é‡ä¸ºpagesizeï¼›
+    page_set physical_page[PAGESIZE];//ç‰©ç†å†…å­˜åœ°å€é¡µ
     pagetable *pagenext;
 };
 
-void init();
+int init();//ldy:ä¿®æ”¹è¿”å›å€¼ç±»å‹
 int read(int page_num,bool IsUsed,v_address address,pagetable *page);
 int write(int page_num,bool IsUsed,bool IsReadonly,bool IsDirty, pagetable *page);
-int Findphyaddr(int page_num,bool IsUsed,v_address address,pagetable *page);//Éè¼ÆÑ°Ö·Ëã·¨
+int Findphyaddr(int page_num,bool IsUsed,v_address address,pagetable *page);//è®¾è®¡å¯»å€ç®—æ³•
 int Free(int page_num,pagetable *page);
 int TLB_renew(TLB tlb);
 

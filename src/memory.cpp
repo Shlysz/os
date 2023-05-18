@@ -1,6 +1,6 @@
 #include "memory.h"
 
-void init(){
+int init(){//ldy:修改返回值类型
 //连续分页
 }
 

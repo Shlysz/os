@@ -1,12 +1,21 @@
 #include <iostream>
 #include <memory>
+#include <pthread.h>
 #include "process.h"
 #include "timer.h"
 #include "globalVariable.h"
 #include "shell.h"
 #include "param.h"
-int main() {
 
+void* systemed() {//内核进程
+    init();//进程初始化
+
+}
+
+int main() {
+    //初始化
+    BYTE* runningMemory = new BYTE[MEMORYSIZE+1];   // 模拟计算机的内存
+    
     
 
 
