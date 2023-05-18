@@ -1,14 +1,17 @@
+#pragma once
+#include <ctime>
 #include <mutex>
 #include <queue>
+#include <thread>
 #include <vector>
 
-#include "process.h"
+// #include "process.h"
 
 using namespace std;
 
-typedef void (*InteruptFunc)(int type, int, int64_t);
-const unsigned int TIMER_INTERUPT_INTERVAL = 100;  // 100ms
-const int InteruptVectorTableSize = 32;
+typedef void (*InteruptFunc)(int type, int, int64_t);  // 中断服务程序
+const unsigned int TIMER_INTERUPT_INTERVAL = 100;      // 100ms
+const int InteruptVectorTableSize = 32;                // 中断向量表长
 
 class Interupt {
    public:
@@ -21,7 +24,14 @@ class Interupt {
     int device_id;
 
     // 中断时间
-    int64_t time;
+    unsigned int time;
+
+    // 中断优先级
+    unsigned int priority_value;
+
+    bool operator<(const Interupt&) const;  // 重载优先级比较运算符
+    bool operator>(const Interupt&) const;
+    bool is_blocking() const;  // 是否阻塞?
 
     // 初始化中断
     void init_interupt();
@@ -36,10 +46,11 @@ class Interupt {
     void set_handler(int type, InteruptFunc f);
 
     // 设置优先级
-    // void set_priority(int type, int);
+    void set_priority(int type, int priority);
 
     // 产生一个中断；供外部设备使用
-    void raise_interupt(int type, int device_id, int64_t value);
+    void raise_device_interupt(int type, int device_id,
+                               unsigned int priority_value);
 
     // 处理中断; 由执行指令的部分调用
     // 为防止中断过多，这里会处理全部可处理的中断

@@ -1,18 +1,17 @@
 #include "process.h"
+
 #include "memory.h"
 
 // 全局变量
 int Userpid = 0;
 struct CentralProcessingUnit CPU;
 struct ShareResource CPU_flag;
-vector<Process> RunQueue;            // 运行队列
-vector<Process> ReadyQueue;          // 准备队列
-vector<Process> WaitQueue;           // 等待队列
-vector<Process> DoneQueue;           // 完成队列
+vector<Process> RunQueue;    // 运行队列
+vector<Process> ReadyQueue;  // 准备队列
+vector<Process> WaitQueue;   // 等待队列
+vector<Process> DoneQueue;   // 完成队列
 
-
-
-int Process::CPU_init() { // CPU初始化
+int Process::CPU_init() {  // CPU初始化
     CPU.eax = 0;
     CPU.ebx = 0;
     CPU.ecx = 0;
@@ -26,7 +25,7 @@ int Process::CPU_init() { // CPU初始化
     return 1;
 }
 
-Process::Process() { // 基本的构造函数
+Process::Process() {  // 基本的构造函数
     pcb.pid = Userpid + 1;
     pcb.slice_use = 0;
     pcb.slice_cnt = 0;
@@ -39,7 +38,7 @@ Process::Process() { // 基本的构造函数
     */
     pcb.page_write = true;
     /*中断有关，待补充
-    pcb.pagein_time = 
+    pcb.pagein_time =
     */
     pcb.parent = NULL;
     pcb.p_date = new struct CentralProcessingUnit;
@@ -51,38 +50,37 @@ Process::Process() { // 基本的构造函数
     /*打开文件和当前工作的目录在这里补充*/
 }
 
-int Process::kernel_init() { // 内核初始化
-    int ret = 1; // 1表示正常
+int Process::kernel_init() {  // 内核初始化
+    int ret = 1;              // 1表示正常
     // 内核首先初始化CPU
     ret = CPU_init();
     /*
     内存初始化
     中断初始化
     */
-   return ret;
+    return ret;
 }
-void Process::runKernel(int flag) { // 内核运行函数
-    if (!flag) { //初始化失败结束程序
+void Process::runKernel(int flag) {  // 内核运行函数
+    if (!flag) {                     // 初始化失败结束程序
         cout << "systemd init fail." << endl;
         exit(0);
     }
 
-    int p_space = NPROC;                 // 剩余的空闲线程空间
+    int p_space = NPROC;  // 剩余的空闲线程空间
 
-    if (1) { 
+    if (1) {
         int request_type = 0;
         /*接收中断请求，存入request_type里*/
-        if (request_type == 1) { // 正常时间到了
-            cout << "执行切换进程操作" << endl; 
-        }
-        else if (request_type == 2) { // 有进程提前完成
+        if (request_type == 1) {  // 正常时间到了
+            cout << "执行切换进程操作" << endl;
+        } else if (request_type == 2) {  // 有进程提前完成
             cout << "进程提前完成，切换" << endl;
         }
-        cout << "Here is kernel running!" << endl;
+        // cout << "Here is kernel running!" << endl;
 
-        //sleep(3);//给每个进程3秒，暂时用睡眠来设置，最后应该由中断来发出
+        // sleep(3);//给每个进程3秒，暂时用睡眠来设置，最后应该由中断来发出
     }
-    cout << "kernel end!" << endl;
+    // cout << "kernel end!" << endl;
 }
 
 // void Process::run() { // 进程运行函数
@@ -99,8 +97,5 @@ void Process::runKernel(int flag) { // 内核运行函数
 
 //     // 调用内存分配，看内存是否有足够的内存分配（待补充）
 
-
-
 //     return 1;
 // }
-
