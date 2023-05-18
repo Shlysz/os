@@ -37,8 +37,9 @@ int Shell::parse() {
         std::cout << "\nCommands Available: \n";
         std::cout << "1. `ls`   - list all files" << std::endl;
         std::cout << "2. `top`  - show all process" << std::endl;
-        std::cout << "3. ..." << std::endl;
-        std::cout << "4. `exit` - exit the simulator" << std::endl;
+        std::cout << "3. `mem`  - show size of free memory "<< std::endl;
+        std::cout << "4. ..." << std::endl;
+        std::cout << "5. `exit` - exit the simulator" << std::endl;
         return 1;
     } else if (all_params[0] == "ls") {  // 列出当前目录下的所有文件
         fs->ls(all_params[1]);
@@ -74,7 +75,12 @@ int Shell::parse() {
         std::cout << "\nCurrent Process: " << std::endl;
         // TODO: 在这里实现列出所有当前进程的信息
         return 1;
-    } else if (params == "exit") {  // 退出程序
+    } else if (all_params[0] == "mem"){
+        //TODO:显示剩余的内存大小
+        //return memory剩余的大小
+        std::cout << "Size of free memory is:"<<endl;
+        return 1;
+    }else if (params == "exit") {  // 退出程序
         return 0;
     } else {  // 其余未实现的使用默认 Linux 系统 bash 功能
         system(params.c_str());
