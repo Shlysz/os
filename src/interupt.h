@@ -16,22 +16,24 @@ const int InteruptVectorTableSize = 32;                // 中断向量表长
 class Interupt {
    public:
     // 中断类型
+    int type;
+    // 请求中断的设备 id
+    int device_id;
+    // 中断优先级
+    unsigned int priority_value;
+    // 中断时间
+    int64_t interupt_time;
+
     const int TIMER = 1;   // 时钟中断
     const int DEVICE = 2;  // 设备请求中断
     const int PANIC = 3;   // 异常中断
 
-    // 请求中断的设备 id
-    int device_id;
-
-    // 中断时间
-    unsigned int time;
-
-    // 中断优先级
-    unsigned int priority_value;
+    // 中断是否有效
+    bool valid;
 
     bool operator<(const Interupt&) const;  // 重载优先级比较运算符
     bool operator>(const Interupt&) const;
-    bool is_blocking() const;  // 是否阻塞?
+    // bool is_blocking() const;  // 是否阻塞?
 
     // 初始化中断
     void init_interupt();
@@ -57,6 +59,8 @@ class Interupt {
     void handle_interupt();
 
     //  定时器相关
+    bool timer_is_valid;
+    bool kill_timer;
     void enable_timer();
     void disable_timer();
     void stop_timer();
