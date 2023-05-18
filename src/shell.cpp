@@ -1,9 +1,12 @@
 #include "shell.h"
 
 #include "FileSystem.h"
-
+#include "global.h"
+#include "FileMethod.h"
 int Shell::parse() {
-    std::cout << "\nroot@simulator > ";
+    //获取当前目录
+    string currentdir=fs->getcurrent_dirent_location();
+    std::cout << "\n"<<currentdir<<"@simulator>";
     std::string params;
     std::getline(std::cin, params);
 
@@ -38,17 +41,37 @@ int Shell::parse() {
         std::cout << "4. ..." << std::endl;
         std::cout << "5. `exit` - exit the simulator" << std::endl;
         return 1;
-    } else if (params == "ls") {  // 列出当前目录下的所有文件
-        // TODO: 待实现和文件系统对接
-        // 在此处实现 ls 的功能
+    } else if (all_params[0] == "ls") {  // 列出当前目录下的所有文件
+        fs->ls(all_params[1]);
         return 1;
     } else if (all_params[0] == "cd") {
-        // TODO: 切换目录，目前为使用 C++ std::filesystem
-        // 实现的，可能需要修改为文件系统自己的实现
-        auto path = std::filesystem::current_path();          // getting path
-        std::filesystem::current_path("./" + all_params[1]);  // setting path
-        return 1;
-    } else if (params == "top") {  // 列出所有进程的信息
+       if( fs->cd(all_params[1]))
+              return 1;
+    }
+    else if(all_params[0]=="write"){
+       if( FileMethod::writeByte(all_params[1]))
+              return 1;
+       cout<<"write failed,may your file is not exist or the block is not enough"<<endl;
+    } else if(all_params[0]=="cat"){
+        if(FileMethod::readByte(all_params[1])>0)
+            return 1;
+        cout<<"read failed,may your file is not exist"<<endl;
+    }
+    else if(all_params[0]=="mkdir"){
+        if(fs->mkdir(all_params[1]))
+            return 1;
+    }
+    else if(all_params[0]=="touch"){
+       if( fs->touch(all_params[1]))
+                return 1;
+         cout<<"touch failed,may your file may is exist"<<endl;
+    }
+    else if(all_params[0]=="rm"){
+        if(fs->rm(all_params[1]))
+            return 1;
+        cout<<"rm failed,may your file is not exist"<<endl;
+    }
+    else if (params == "top") {  // 列出所有进程的信息
         std::cout << "\nCurrent Process: " << std::endl;
         // TODO: 在这里实现列出所有当前进程的信息
         return 1;

@@ -51,17 +51,20 @@ void FileSystem::ls(string path) {
         return;
     }
     for (int i = 0; i < 12; i++) {
-        if (dir->d_inode == -1) {
+        if (inode_table[dir->d_inode].i_dirent[i].d_inode== -1) {
             continue;
         }
+        string type;
+        if(inode_table[dir->d_inode].i_dirent[i].d_inode==0)  type="目录";
+        else type="文件";
         cout << inode_table[dir->d_inode].i_dirent[i].d_name << " "
-             << dir->file_type << endl;
+             << type << endl;
     }
 }
 
 bool FileSystem::cd(string path) {
     // 获取该路径的dirent
-    dirent *dir = get_dirent(path);
+    dirent *dir = get_dirent(std::move(path));
     if (dir == nullptr) {
         cout << "路径不存在" << endl;
         return false;
@@ -75,7 +78,7 @@ bool FileSystem::cd(string path) {
     return true;
 }
 // 创建新文件
-bool FileSystem::touch(string name) {
+bool FileSystem::touch(const string& name) {
     // 判断是否能继续挂载
     int free_dirent_num;  // 空闲子项
     if ((free_dirent_num = get_current_inode_free_dirent()) == -1) {
@@ -104,7 +107,7 @@ bool FileSystem::touch(string name) {
     return true;
 }
 
-bool FileSystem::rm(string name) {
+bool FileSystem::rm(const string& name) {
     // 删除文件和目录
     // 判断是否存在
     int inode_num = -1;
