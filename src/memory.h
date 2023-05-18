@@ -1,14 +1,13 @@
 #include <iostream>
 #include <cstring>
 
-#define unsigned int pa
 #define unsigned char BYTE
 #define unsigned int  v_address 
 #define unsigned int  p_address
 #define TLBsize 32
 #define pagetablesize 1024
 #define memory_size 4*1024*1024
-#define disk_size 4*1024*1024*1024
+#define disk_size 512*1024*1024
 
 
 
