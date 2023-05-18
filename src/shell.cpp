@@ -1,97 +1,60 @@
-//
-// Created by 26656 on 2023/4/5.
-//
+#include "shell.h"
 
-#include <sstream>
-#include <cstring>
-#include "globalVariable.h"
+#include "Filesystem.h"
 
-bool shell::analyse() {
-    //将order按照空格分割
-    vector<string> res = split();
-    if (res.empty())
-        return false;
-    if (res[0] == "file")
-        if (runFileOrder(res)) return true;
-        else return false;
+int Shell::parse() {
+    std::cout << "\nroot@simulator > ";
+    std::string params;
+    std::getline(std::cin, params);
 
-    return false;
+    std::vector<std::string> all_params;
+    std::string temp;
+    for (auto t : params) {
+        if (t != ' ')
+            temp += t;
+        else {
+            all_params.push_back(temp);
+            temp = "";
+        }
+    }
+    // 将当前回车输入的指令的参数放入一个 vector 里面
+    // 比如输入 cd dir, 那么 all_params 里面放的就是 ["cd", "dir"]
+    if (temp.size() != 0) all_params.push_back(temp);
+
+    // debug
+    // for (auto t : all_params) std::cout << t << ' ';
+    // std::cout << std::endl;
+
+    /*
+        所有和 shell 交互的指令在下面实现
+        继续加上一个 else if 代码块就行了, 然后 return 1 给 main.cpp
+    */
+
+    if (params == "help") {  // 输出所有可用的指令帮助信息
+        std::cout << "\nCommands Available: \n";
+        std::cout << "1. `ls`   - list all files" << std::endl;
+        std::cout << "2. `top`  - show all process" << std::endl;
+        std::cout << "3. ..." << std::endl;
+        std::cout << "4. `exit` - exit the simulator" << std::endl;
+        return 1;
+    } else if (params == "ls") {  // 列出当前目录下的所有文件
+        // TODO: 待实现和文件系统对接
+        // 在此处实现 ls 的功能
+        return 1;
+    } else if (all_params[0] == "cd") {
+        // TODO: 切换目录，目前为使用 C++ std::filesystem
+        // 实现的，可能需要修改为文件系统自己的实现
+        auto path = std::filesystem::current_path();          // getting path
+        std::filesystem::current_path("./" + all_params[1]);  // setting path
+        return 1;
+    } else if (params == "top") {  // 列出所有进程的信息
+        std::cout << "\nCurrent Process: " << std::endl;
+        // TODO: 在这里实现列出所有当前进程的信息
+        return 1;
+    } else if (params == "exit") {  // 退出程序
+        return 0;
+    } else {  // 其余未实现的使用默认 Linux 系统 bash 功能
+        system(params.c_str());
+        return 1;
+    }
 }
-
-
-vector<string> shell::split() {
-    vector<string> res;
-    stringstream ss(order);
-    string tmp;
-    while (ss >> tmp) {
-        res.push_back(tmp);
-    }
-
-    return res;
-}
-
-bool shell::runFileOrder(const vector<string> &fileorder) {
-    if (fileorder.size() < 2) return false;
-    if (fileorder[1] == "mkdir") {
-        if (fileorder.size() < 3 || fileorder.size() >= 4) return false;
-        const string &name = fileorder[2];//文件夹名称
-        if (fs->mkdir(name)) return true;
-        else return false;
-    }
-    if (fileorder[1] == "create") {
-        if (fileorder.size() < 4 || fileorder.size() >= 5) return false;
-        if (fs->create(fileorder[2], stoi(fileorder[3]))) return true;
-        else return false;
-    }
-    if (fileorder[1] == "cd") {
-        string path;
-        if (fileorder.size() < 3)
-            path = "/";
-        else
-            path = fileorder[2];
-        cout << "path: " << path << endl;
-        if (fs->cd(path)) return true;
-        else return false;
-    }
-    if (fileorder[1] == "ls") {
-        if (fileorder.size() != 2) return false;
-        fs->ls();
-        return true;
-    }
-    if (fileorder[1] == "rm") {
-        if (fileorder.size() < 3 || fileorder.size() >= 4) return false;
-        if (fs->remove(fileorder[2])) return true;
-        else return false;
-    }
-    if (fileorder[1] == "write") {
-        if (fileorder.size() < 3 || fileorder.size() >= 4) return false;
-        //输入内容
-        cout << "input content: " << endl;
-        File *file = fs->open(fileorder[2]);
-        char *buffer;
-        buffer = new char[file->fcb->size];
-        cout << "input content: " << endl;
-        //输入到buffer
-        cin.getline(buffer, file->fcb->size);
-        size_t length = strlen(buffer) + 1;
-        file->write(buffer, length);
-        delete[] buffer;
-        return true;
-
-    }
-    if(fileorder[1]=="cat")
-    {
-        if(fileorder.size()<3||fileorder.size()>=4) return false;
-        File*file=fs->open(fileorder[2]);
-        char*buffer=new char[file->fcb->size];
-        file->read(buffer,file->fcb->size);
-        cout<<buffer<<endl;
-        delete[]buffer;
-        return true;
-    }
-    return false;
-}
-
-
-
-

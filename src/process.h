@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include <queue>
-#include <pthread.h>
+#include <mutex>
 #include "memory.h"
 #include "file.h"
 #include "time.h"
