@@ -2,7 +2,9 @@
 #include <mutex>
 #include <thread>
 #include <vector>
+#include <stack>
 #include <iostream>
+#include "FileSystem.h"
 
 using namespace std;
 
@@ -44,6 +46,12 @@ struct ShareResource { // 共享资源占用标记
     bool using_edx;
     bool is_working;
 };
+typedef struct cmd {//指令格式
+	int time;//指令运行的时间
+	int num;//指令对应的编码
+	int num2;//需要唤醒或阻塞的进程PID，文件size或申请的设备代码
+	string path;//创建或删除文件的路径
+}cmd;
 
 typedef struct ProgramControlBlock { // PCB表结构
     int pid;            // pid
@@ -62,6 +70,8 @@ typedef struct ProgramControlBlock { // PCB表结构
     std::string name;   // 进程名称
     struct ProgramControlBlock *parent;   // 父进程
     struct CentralProcessingUnit *p_date; // 中断后进程存储此进程的共享资源数据
+    File* myfile;//进程文件的路径指针
+    stack<cmd> cmdStack; // 指令栈
     /*这里应该补充打开文件，用一个结构ofile来保存所有在这个进程打开的文件*/
     /*还得有一个变量指向当前进程的工作目录*/
 } PCB, *PCBptr;
@@ -79,7 +89,9 @@ public:
     void runKernel(int flag);           // 内核进程，进制状态转换必须由中断进入到这个函数来处理
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
     int create(int parent_id);          // 创建线程对象（进入就绪）
-    // void run();                         // 进程运行函数
+    void run();                         // 进程运行函数
+    int runCmd(PCB *runPCB);            //运行进程的指令，如果没有被中断等情况则返回1，否则返回0
+
     // void wait(Process &proc);           // 由运行状态进程挂起
     // void wakeup(Process &proc);         // 唤醒挂起进程
     void readyforward();                // 就绪状态进一步运行或者先挂起

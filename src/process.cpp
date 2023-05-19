@@ -126,3 +126,11 @@ void Process::readyforward() { // 准备进程进入工作
     // 内存分配
 
 }
+
+int runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
+
+}
+
+void run(){//运行函数
+    cout << "nowTime:"<<
+}
