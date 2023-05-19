@@ -92,6 +92,13 @@ int get_index_by_deviceID(int deviceID);
  * 返回 0 ：设备 ID 不存在
 */
 int apply_device(int pid, int deviceID);
+
+/**
+ * 进程释放设备
+ * 返回 2 ：pid 错误（pid不存在或在等待队列中）
+ * 返回 1 ：进程释放设备成功
+ * 返回 0 ：设备 ID 不存在
+*/
 int release_device(int pid, int deviceID);
 
 
