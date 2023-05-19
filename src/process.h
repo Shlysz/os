@@ -30,6 +30,14 @@ typedef int PSTATE;      //线程状态
 #define SUSPEND        3 //阻塞挂起
 #define TERMINATED     4 //死亡结束
 
+//指令编码
+#define CREAFILE       0 //创建文件
+#define DELEFILE       1 //删除文件
+#define APPLY          2 //申请设备
+#define REALESR        3 //释放设备
+#define BLOCKCMD       4 //阻塞其他进程
+#define WAKE           5 //唤醒其他进程
+
 struct CentralProcessingUnit { // 处理器
     unsigned int eax;
     unsigned int ebx;
@@ -50,7 +58,7 @@ typedef struct cmd {//指令格式
 	int time;//指令运行的时间
 	int num;//指令对应的编码
 	int num2;//需要唤醒或阻塞的进程PID，文件size或申请的设备代码
-	string path;//创建或删除文件的路径
+	string name;//创建或删除文件的名字
 }cmd;
 
 typedef struct ProgramControlBlock { // PCB表结构
