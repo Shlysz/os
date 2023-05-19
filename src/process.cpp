@@ -2,8 +2,7 @@
 #include "interupt.h"
 #include "memory.h"
 #include "FileSystem.h"
-#include "global.h"
-#include "device.h"
+// #include "device.h"
 
 // 全局变量
 int Userpid = 0;
@@ -132,45 +131,45 @@ void Process::readyforward() { // 准备进程进入工作
 }
 
 int runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
-    Interupt interupt;
-    while (!runPCB->cmdStack.empty() && runPCB->cmdStack.top().time <= runPCB->slice_use){
-        cmd nowCmd = runPCB->cmdStack.top();
-        runPCB->cmdStack.pop();
-        switch (nowCmd.num)
-        {
-        case CREAFILE:
-            if(fs->mkdir(nowCmd.name)){
-                cout << "创建成功" << endl;
-            }else{
-                cout << "创建失败" <<endl;
-            }     
-            break;
-        case DELEFILE: 
-            break;
-        case APPLY:
-            if(apply_device(runPCB->pid,nowCmd.num2)==1){
-                runPCB->state = SUSPEND;
-            }
-            cout << "申请设备" << endl;
-            break;
-        case REALESR:
-            release_device(runPCB->pid, nowCmd.num2);
-            cout << "释放设备" << endl;
-            break;
-        case BLOCKCMD:
-            //TODO :block其他进程
-            cout << "block:" << nowCmd.num2 << endl;
-            break;
-        case WAKE:
-            //TODO :唤醒其他进程
-            cout << "wakeup:" << nowCmd.num2 << endl;
-            break;
-        default:
-            cout << "指令错误" << endl;
-            break;
-        }
-       interupt.handle_interupt(); 
-    }
+    // Interupt interupt;
+    // while (!runPCB->cmdStack.empty() && runPCB->cmdStack.top().time <= runPCB->slice_use){
+    //     cmd nowCmd = runPCB->cmdStack.top();
+    //     runPCB->cmdStack.pop();
+    //     switch (nowCmd.num)
+    //     {
+    //     case CREAFILE:
+    //         if(fs->mkdir(nowCmd.name)){
+    //             cout << "创建成功" << endl;
+    //         }else{
+    //             cout << "创建失败" <<endl;
+    //         }     
+    //         break;
+    //     case DELEFILE: 
+    //         break;
+    //     case APPLY:
+    //         if(apply_device(runPCB->pid,nowCmd.num2)==1){
+    //             runPCB->state = SUSPEND;
+    //         }
+    //         cout << "申请设备" << endl;
+    //         break;
+    //     case REALESR:
+    //         release_device(runPCB->pid, nowCmd.num2);
+    //         cout << "释放设备" << endl;
+    //         break;
+    //     case BLOCKCMD:
+    //         //TODO :block其他进程
+    //         cout << "block:" << nowCmd.num2 << endl;
+    //         break;
+    //     case WAKE:
+    //         //TODO :唤醒其他进程
+    //         cout << "wakeup:" << nowCmd.num2 << endl;
+    //         break;
+    //     default:
+    //         cout << "指令错误" << endl;
+    //         break;
+    //     }
+    //    interupt.handle_interupt(); 
+    // }
     return 1;
 }
 
