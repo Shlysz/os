@@ -94,7 +94,11 @@ void Process::runKernel(int flag) { // 内核运行函数
     // cout << "kernel end!" << endl;
 }
 
-// void Process::run() { // 进程运行函数
+int Process::create(int parent_id) {
+    if (WaitQueue.size() > MAXQUEUE) { // 判断是否有空间创建进程
+        cout << "Without enough space to create new thread!" << endl;
+        return 0; // 返回0创建进程失败
+    }
 
     Process newProcess;
     ReadyQueue.push_back(newProcess);
