@@ -84,6 +84,13 @@ typedef struct SystemDeviceTable {
 void init_device();
 int registe_device(int deviceID);
 int get_index_by_deviceID(int deviceID);
+
+/**
+ * 进程请求设备
+ * 返回 2 ：设备为空闲状态，进程直接使用设备
+ * 返回 1 ：设备占用中，进程加入等待队列
+ * 返回 0 ：设备 ID 不存在
+*/
 int apply_device(int pid, int deviceID);
 int release_device(int pid, int deviceID);
 
