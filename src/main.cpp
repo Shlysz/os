@@ -5,9 +5,7 @@
 int main() {
     Process kernel;
     int kernel_flag = kernel.kernel_init();
-    thread systemd(kernel.runKernel, kernel_flag); // 创建内核进程
-
-    cout << "back to main" << endl;
+    thread systemd(&Process::runKernel, kernel, kernel_flag); // 创建内核进程
 
     // system("clear");
     UI menu;

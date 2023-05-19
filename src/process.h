@@ -28,8 +28,7 @@ typedef int PSTATE;      //线程状态
 #define SUSPEND        3 //阻塞挂起
 #define TERMINATED     4 //死亡结束
 
-//处理器
-struct CentralProcessingUnit {
+struct CentralProcessingUnit { // 处理器
     unsigned int eax;
     unsigned int ebx;
     unsigned int ecx;
@@ -38,7 +37,7 @@ struct CentralProcessingUnit {
     //BYTE *share_addr;//共享内存首地址
 };
 
-struct ShareResource {
+struct ShareResource { // 共享资源占用标记
     bool using_eax;
     bool using_ebx;
     bool using_ecx;
@@ -46,9 +45,7 @@ struct ShareResource {
     bool is_working;
 };
 
-//PCB表结构
-typedef struct ProgramControlBlock {
-
+typedef struct ProgramControlBlock { // PCB表结构
     int pid;            // pid
     int slice_use;      // 当前已在时间片中使用的时间
     int slice_cnt;      // 使用过的时间片数量
@@ -79,13 +76,13 @@ public:
 
     int CPU_init();                     // CPU初始化
     int kernel_init();                  // 内核初始化
-    static void runKernel(int flag);    // 内核进程，进制状态转换必须由中断进入到这个函数来处理
+    void runKernel(int flag);           // 内核进程，进制状态转换必须由中断进入到这个函数来处理
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
-    // int create(int parent_id);          // 创建线程对象（进入就绪）
+    int create(int parent_id);          // 创建线程对象（进入就绪）
     // void run();                         // 进程运行函数
     // void wait(Process &proc);           // 由运行状态进程挂起
     // void wakeup(Process &proc);         // 唤醒挂起进程
-    // void readyforward(Process &proc);   // 就绪状态进一步运行或者先挂起
+    void readyforward();                // 就绪状态进一步运行或者先挂起
     // void terminate(Process &proc);      // 终结进程 
 };
 
