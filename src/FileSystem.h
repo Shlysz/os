@@ -120,8 +120,8 @@ public:
     bool mkdir(string name);
     void ls(string path);
     bool cd(string path);
-    bool touch(string name);
-    bool rm(string name);
+    bool touch(const string& name);
+    bool rm(const string& name);
     bool rmdir(int inode_num);
     File* open(string name,int mode);
     bool close(File* file);
@@ -145,6 +145,8 @@ private:
     int get_current_inode_free_dirent();
     dirent* get_dirent(string path);
 };
+
+
 
 #endif //FILESYSTEM_FILESYSTEM_H
 //生成数据结构说明
