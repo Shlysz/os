@@ -44,7 +44,7 @@ void Interupt::init_interupt() {
 
 // 产生时钟中断给进程
 // 然后加入中断队列
-void raise_time_interupt(int pid) {
+void Interupt::raise_time_interupt(int pid) {
     Interupt time_task;
     time_task.pid = pid;
     time_task.type = 1;
@@ -97,6 +97,7 @@ void Interupt::handle_interupt() {
         auto task = interupt_queue.front();
         interupt_queue.pop();
         if (task.type == 1) {  // 时钟中断
+            cout << "时钟中断请求" << endl;
             Interupt::send_alarm();
         }
     }
