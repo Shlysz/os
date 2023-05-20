@@ -1,6 +1,7 @@
 #include "process.h"
 #include "memory.h"
 
+using namespace std;
 
 // 全局变量
 int Userpid = 2;
@@ -18,7 +19,6 @@ int Process::CPU_init() {  // CPU初始化
     CPU.ebx = 0;
     CPU.ecx = 0;
     CPU.edx = 0;
-    CPU.pc = 0;
     CPU_flag.using_eax = false;
     CPU_flag.using_ebx = false;
     CPU_flag.using_ecx = false;
@@ -54,6 +54,10 @@ Process::Process() {  // 基本的构造函数
 
 int Process::kernel_init() {  // 内核初始化
     pcb.name = "kernel";
+    pcb.name = "kernel";
+    pcb.slice_use = 99;                  // 内核进程的运行时间是系统启动至今的时间
+    pcb.slice_cnt = 0;
+    pcb.time_need = 99999 - pcb.slice_use;    
     int ret = 1;              // 1表示正常
     ret = CPU_init();         // 内核首先初始化CPU
     /*
@@ -72,10 +76,7 @@ void Process::runKernel(int flag) { // 内核运行函数
     //发出中断，请求当前系统时间存入变量
     
     int p_space = NPROC;                 // 剩余的空闲线程空间
-    pcb.name = "kernel";
-    pcb.slice_use = 99;                  // 内核进程的运行时间是系统启动至今的时间
-    pcb.slice_cnt = 0;
-    pcb.time_need = 99999 - pcb.slice_use;           
+             
     // cout << "\n(Here is kernel running!)" << endl;
     while (1) { 
         int request_type = 0;
@@ -89,8 +90,7 @@ void Process::runKernel(int flag) { // 内核运行函数
         if (request_type == 1) { // 时钟中断
             // 检测正在运行的进程的运行时间
 
-        }
-        else if (request_type == 2) { // 设备中断
+        } else if (request_type == 2) {  // 设备中断
             // 将进程挂起并切换,或者进程完成输入中断返回
 
         }
@@ -136,8 +136,7 @@ void Process::readyforward() { // 准备进程进入工作
     RunQueue.push_back(ReadyQueue[0]);
     ReadyQueue.erase(ReadyQueue.begin());
     //运行
-    thread subproc(&Process::run, kernel, Userpid);
-    subproc.detach();
+    
 }
 
 void Process::wait() { // 中断进程
@@ -183,12 +182,68 @@ void Process::displayProc() { // 观察进程信息
         }
         dd = (*e).size / memory_size * 1.0;
         cout << (*e).pid << "\troot\t" << (*e).priority << "\t"  << dd << "%\t"
-             << (*e).state << "\t" << d << "\t"<< (*e).name << endl; 
+             << s << "\t" << d << "\t"<< (*e).name << endl; 
     }
     cout << "CPU\tUsingthreads:" << RunQueue.size()+2 << "/" << NPROC+2 << endl;
-    //debug:
-    cout << "runqueue:" << RunQueue.size() << endl;
+    cout << "debug info:\nrunqueue:" << RunQueue.size() << endl;
     cout << "waitqueue:" << WaitQueue.size() << endl;
     cout << "readyqueue:" << ReadyQueue.size() << endl;
     cout << "PCBlist:" << PCBlist.size() << endl;
+}
+
+bool runCmd(PCB *runPCB){ // 运行进程的指令，如果没有被中断等情况则返回1，否则返回0
+//    Interupt interupt;
+    bool interupt = true;//TODO:中断是否需要这个变量
+    int num = runPCB->PC - &runPCB->cmdVector[0]; //运行到的指令数
+//    runPCB->PC = &runPCB->cmdVector[0];//PC指向指令数组的指令
+    //TODO:上面这行放到PCB初始化中
+    while (&runPCB->cmdVector.back() != runPCB->PC && interupt){
+        runPCB->PC = &runPCB->cmdVector[num];
+        switch (runPCB->PC->num)
+        {
+        case CREAFILE:
+            if(fs->mkdir(runPCB->PC->name)){
+                cout << "创建成功" << endl;
+            }else{
+                cout << "创建失败" <<endl;
+            }
+            break;
+        case DELEFILE:
+            if (fs->rm(runPCB->PC->name)){
+                cout << "删除成功" << endl;
+            } else{
+                cout << "删除失败" << endl;
+            }
+            break;
+        case APPLY:
+            // if(apply_device(runPCB->pid,nowCmd.num2)==1){
+            //TODO:要不要给中断一个设备占用信息
+            // }
+            cout << "申请设备" << endl;
+            break;
+        case REALESR:
+            //release_device(runPCB->pid, nowCmd.num2);
+            cout << "释放设备" << endl;
+            break;
+        default:
+            cout << "指令错误" << endl;
+            break;
+        }
+        num++;
+//       interupt.handle_interupt();
+        //TODO:获得中断判断时间片是否用完的信息以及切断
+    }
+    return interupt;
+}
+
+void run(PCB *runPCB){ // 运行函数
+    //TODO:申请内存
+    //TODO:申请中断定时器
+    cout << "running process PID:" << runPCB->pid << "needTime:" << runPCB->time_need << endl;
+    if(!runCmd(runPCB)){
+        //TODO:调度（？）
+    }
+    //TODO:释放内存
+    //TODO:解除中断定时器
+
 }

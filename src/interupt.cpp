@@ -28,34 +28,41 @@ bool Interupt::operator>(const Interupt& b) const {
     }
 }
 
+queue<Interupt> interupt_queue;  // 中断队列
+
 // 默认中断函数
 void do_nothing(int type, int, int64_t) {}
 
 // 异常默认处理函数
 void panic(int type, int64_t) { throw "panic"; }
 
-// 中断优先队列
-
 // 初始化中断
-void Interupt::init_interupt() {}
+void Interupt::init_interupt() {
+    while (!interupt_queue.empty()) interupt_queue.pop();
+}
+
+// 产生时钟中断给进程
+// 然后加入中断队列
+void raise_time_interupt() {}
+
+// 产生一个中断供外部设备使用
+// 加入中断队列
+void Interupt::raise_device_interupt(int type, int device_id,
+                                     unsigned int priority_value) {}
 
 // 关中断
-void Interupt::push_off() { valid = true; }
+void Interupt::push_off() {}
 
 // 开中断
-void Interupt::pop_off() { valid = false; }
+void Interupt::pop_off() {}
 
 // 安装中断处理程序
 void Interupt::set_handler(int type, InteruptFunc f) {
     InteruptVectorTable[static_cast<int>(type)].handler = f;
 }
 
-// 产生一个中断；供外部设备使用
-void Interupt::raise_device_interupt(int type, int device_id,
-                                     unsigned int priority_value) {}
-
 // 处理中断; 由执行指令的部分调用
-// 为防止中断过多，这里会处理全部可处理的中断
+// 为防止中断过多, 这里会处理全部可处理的中断
 void Interupt::handle_interupt() {}
 
 void Interupt::set_priority(int type, int v) {

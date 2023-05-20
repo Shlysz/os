@@ -1,9 +1,11 @@
+#pragma once
 #include <stdbool.h>
 #include <mutex>
 #include <thread>
 #include <vector>
 #include <iostream>
 #include <iomanip>
+#include "global.h"
 
 using namespace std;
 
@@ -26,12 +28,20 @@ typedef int PSTATE;      //线程状态
 #define SUSPEND        3 //阻塞挂起
 #define TERMINATED     4 //死亡结束
 
+//指令编码
+#define CREAFILE       0 //创建文件
+#define DELEFILE       1 //删除文件
+#define APPLY          2 //申请设备
+#define REALESR        3 //释放设备
+#define BLOCKCMD       4 //阻塞其他进程
+#define WAKE           5 //唤醒其他进程
+
 struct CentralProcessingUnit { // 处理器
     unsigned int eax;
     unsigned int ebx;
     unsigned int ecx;
     unsigned int edx;
-    unsigned int pc;
+
     //BYTE *share_addr;//共享内存首地址
 };
 
@@ -43,11 +53,17 @@ struct ShareResource { // 共享资源占用标记
     bool is_working;
 };
 
+typedef struct cmd {//指令格式
+	int num;//指令对应的编码
+	int num2;//需要唤醒或阻塞的进程PID，文件size或申请的设备代码
+	string name;//创建或删除文件的名字
+}cmd;
+
 typedef struct ProgramControlBlock { // PCB表结构
     int pid;            // pid
     int slice_use;      // 当前已在时间片中使用的时间
     int slice_cnt;      // 使用过的时间片数量
-    int time_need;      // 预计还需要的时间
+    int time_need;      // 预计还需要的时间单位
     int size;           // 大小
     int pagetable_addr; // 页表首地址
     int pagetable_pos;  // 当前载入内存中使用的页表序号
@@ -56,10 +72,12 @@ typedef struct ProgramControlBlock { // PCB表结构
     int pagein_time;    // 页面存入内存时间
     PSTATE state;       // 进程状态
     PRIORITY priority;  // 优先级
-
+    File *myFile;
     std::string name;   // 进程名称
     struct ProgramControlBlock *parent;   // 父进程
     struct CentralProcessingUnit *p_date; // 中断后进程存储此进程的共享资源数据
+    cmd* PC;//指令PC指针
+    vector<cmd> cmdVector; // 指令数组
     /*这里应该补充打开文件，用一个结构ofile来保存所有在这个进程打开的文件*/
     /*还得有一个变量指向当前进程的工作目录*/
 } PCB, *PCBptr;
@@ -78,12 +96,12 @@ public:
 
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
     int create(int, string);            // 创建线程对象（进入就绪）
-    
-    void wait();                     // 由运行状态进程挂起
-    void wakeup();                   // 唤醒挂起进程
+
+
+    void wait();                        // 由运行状态进程挂起
+    void wakeup();                      // 唤醒挂起进程
     void readyforward();                // 就绪状态进一步运行或者先挂起
     void terminate();                   // 终结进程 
-    void run(int);//for debug
 
     void displayProc();                 // 展示进程信息
     // void checkProcess(int);             // 观察某个进程信息
