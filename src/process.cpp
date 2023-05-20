@@ -1,11 +1,9 @@
 #include "process.h"
-#include "interupt.h"
+
 #include "memory.h"
-#include "FileSystem.h"
 
 // 全局变量
 int Userpid = 0;
-int nowTime = 0;             //当前时间
 struct CentralProcessingUnit CPU;
 struct ShareResource CPU_flag;
 vector<Process> RunQueue;    // 运行队列
@@ -116,8 +114,8 @@ int Process::create(int parent_id) {
 //            ;
 //        }
 //    }
-    
-    
+
+
 
     return 1;
 }
@@ -141,9 +139,9 @@ int runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况
                 cout << "创建成功" << endl;
             }else{
                 cout << "创建失败" <<endl;
-            }     
+            }
             break;
-        case DELEFILE: 
+        case DELEFILE:
             break;
         case APPLY:
             // if(apply_device(runPCB->pid,nowCmd.num2)==1){
@@ -167,7 +165,7 @@ int runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况
             cout << "指令错误" << endl;
             break;
         }
-       interupt.handle_interupt(); 
+       interupt.handle_interupt();
     }
     return 1;
 }
@@ -175,7 +173,7 @@ int runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况
 void run(){//运行函数
     cout << "nowTime:"<< nowTime << endl;
     if (!ReadyQueue.empty()){
-        
+
     }
-    
+
 }

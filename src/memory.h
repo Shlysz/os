@@ -17,7 +17,7 @@ class pagetable {
 };
 
 class TranslookasideBuffer {
-   public:
+    public:
     int TLBitem[TLBsize];
 };
 
