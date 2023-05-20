@@ -1,5 +1,4 @@
 #include "process.h"
-
 #include "memory.h"
 
 // 全局变量
@@ -152,11 +151,13 @@ string getNUM(int buf[1], PCB *newPCB){
 
 bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
 //    Interupt interupt;
-    bool interupt = true;//TODO:中断是否需要这个变量
+    bool interupt = false;//TODO:中断是否需要这个变量
     int num = runPCB->PC - &runPCB->cmdVector[0]; //运行到的指令数
 //    runPCB->PC = &runPCB->cmdVector[0];//PC指向指令数组的指令
     //TODO:上面这行放到PCB初始化中
-    while (&runPCB->cmdVector.back() != runPCB->PC && interupt){
+    while (runPCB->time_need!=0 && interupt &&(runPCB->slice_use%3!=0)){
+        runPCB->time_need--;
+        runPCB->slice_use++;
         runPCB->PC = &runPCB->cmdVector[num];
         switch (runPCB->PC->num)
         {
@@ -184,14 +185,6 @@ bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情�
             //release_device(runPCB->pid, nowCmd.num2);
             cout << "释放设备" << endl;
             break;
-        case BLOCKCMD:
-            //TODO :block其他进程
-            cout << "block:" << runPCB->PC->num2 << endl;
-            break;
-        case WAKE:
-            //TODO :唤醒其他进程
-            cout << "wakeup:" << runPCB->PC->num2 << endl;
-            break;
         default:
             cout << "指令错误" << endl;
             break;
@@ -205,6 +198,7 @@ bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情�
 
 void run(PCB *runPCB){//运行函数
     //TODO:申请内存
+
     //TODO:申请中断定时器
     cout << "running process PID:" << runPCB->pid << "needTime:" << runPCB->time_need << endl;
     if(!runCmd(runPCB)){
