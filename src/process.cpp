@@ -1,6 +1,7 @@
 #include "process.h"
 
 #include "memory.h"
+#include "global.h"
 
 // 全局变量
 int Userpid = 0;
@@ -127,25 +128,63 @@ void Process::readyforward() { // 准备进程进入工作
 
 }
 
-int runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
-    Interupt interupt;
-    while (!runPCB->cmdStack.empty() && runPCB->cmdStack.top().time <= runPCB->slice_use){
-        cmd nowCmd = runPCB->cmdStack.top();
-        runPCB->cmdStack.pop();
-        switch (nowCmd.num)
+//样例：1 2 xx
+//提取上述样例的值，对应buf[0-1]，最后一个string作为返回值（有可能不存在）
+string getNUM(int buf[1], PCB *newPCB){
+    string temp = "";
+    int flag = 1;
+    char c[1000];
+//    fget(c, newPCB->myFile);
+    //TODO:报红？
+    int j = 0;
+    for (int i = 0; i < 2; i++) {
+        buf[i] = 0;
+        if (c[i] == '-') {
+            buf[0] = -1;
+            flag = 0;
+            break;
+        }
+        while (c[j]!=' '&&c[j]!=EOF&&c[j]!='\n') {
+            buf[i] = buf[i] * 10 + c[j] - '0';
+            j++;
+        }
+        if (c[j] == EOF || c[j] == '\n')flag = 0;
+        j++;
+    }
+    if (flag) {
+        while (c[j] != EOF && c[j]!= '\n') {
+            temp += c[j++];
+        }
+    }
+    return temp;
+}
+bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
+//    Interupt interupt;
+    bool interupt = true;//TODO:中断是否需要这个变量
+    int num = runPCB->PC - &runPCB->cmdVector[0]; //运行到的指令数
+//    runPCB->PC = &runPCB->cmdVector[0];//PC指向指令数组的指令
+    //TODO:上面这行放到PCB初始化中
+    while (&runPCB->cmdVector.back() != runPCB->PC && interupt){
+        runPCB->PC = &runPCB->cmdVector[num];
+        switch (runPCB->PC->num)
         {
         case CREAFILE:
-            if(fs->mkdir(nowCmd.name)){
+            if(fs->mkdir(runPCB->PC->name)){
                 cout << "创建成功" << endl;
             }else{
                 cout << "创建失败" <<endl;
             }
             break;
         case DELEFILE:
+            if (fs->rm(runPCB->PC->name)){
+                cout << "删除成功" << endl;
+            } else{
+                cout << "删除失败" << endl;
+            }
             break;
         case APPLY:
             // if(apply_device(runPCB->pid,nowCmd.num2)==1){
-            //     runPCB->state = SUSPEND;
+            //TODO:要不要给中断一个设备占用信息
             // }
             cout << "申请设备" << endl;
             break;
@@ -155,25 +194,30 @@ int runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况
             break;
         case BLOCKCMD:
             //TODO :block其他进程
-            cout << "block:" << nowCmd.num2 << endl;
+            cout << "block:" << runPCB->PC->num2 << endl;
             break;
         case WAKE:
             //TODO :唤醒其他进程
-            cout << "wakeup:" << nowCmd.num2 << endl;
+            cout << "wakeup:" << runPCB->PC->num2 << endl;
             break;
         default:
             cout << "指令错误" << endl;
             break;
         }
-       interupt.handle_interupt();
+        num++;
+//       interupt.handle_interupt();
+        //TODO:获得中断判断时间片是否用完的信息以及切断
     }
-    return 1;
+    return interupt;
 }
 
-void run(){//运行函数
-    cout << "nowTime:"<< nowTime << endl;
-    if (!ReadyQueue.empty()){
-
+void run(PCB *runPCB){//运行函数
+    //TODO:申请内存
+    //TODO:申请中断定时器
+    cout << "running process PID:" << runPCB->pid << "needTime:" << runPCB->time_need << endl;
+    if(!runCmd(runPCB)){
+        //TODO:调度（？）
     }
+    //TODO:释放内存
 
 }
