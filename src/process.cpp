@@ -108,14 +108,14 @@ int Process::create(int parent_id) {
     // 调用内存分配，看内存是否有足够的内存分配（待补充）,结果返回给jud
     // 0:没有足够的内存空间
     // 1:有足够的内存空间
-    if (jud == 1) { 
-        if (RunQueue.size() < NPROC) { // 运行进程队列未满
-            ;
-        }
-        else {
-            ;
-        }
-    }
+//    if (jud == 1) {
+//        if (RunQueue.size() < NPROC) { // 运行进程队列未满
+//            ;
+//        }
+//        else {
+//            ;
+//        }
+//    }
     
     
 
