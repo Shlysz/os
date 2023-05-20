@@ -1,15 +1,17 @@
 #include "process.h"
-
 #include "memory.h"
 
+
 // 全局变量
-int Userpid = 0;
+int Userpid = 2;
 struct CentralProcessingUnit CPU;
 struct ShareResource CPU_flag;
 vector<Process> RunQueue;    // 运行队列
 vector<Process> ReadyQueue;  // 准备队列
 vector<Process> WaitQueue;   // 等待队列
 vector<Process> DoneQueue;   // 完成队列
+vector<PCB*> PCBlist;
+Process kernel;
 
 int Process::CPU_init() {  // CPU初始化
     CPU.eax = 0;
@@ -51,9 +53,9 @@ Process::Process() {  // 基本的构造函数
 }
 
 int Process::kernel_init() {  // 内核初始化
+    pcb.name = "kernel";
     int ret = 1;              // 1表示正常
-    // 内核首先初始化CPU
-    ret = CPU_init();
+    ret = CPU_init();         // 内核首先初始化CPU
     /*
     内存初始化
     中断初始化
@@ -63,16 +65,27 @@ int Process::kernel_init() {  // 内核初始化
 
 void Process::runKernel(int flag) { // 内核运行函数
     if (!flag) { //初始化失败结束程序
-        cout << "systemd init fail." << endl;
+        cout << "\nsystemd init fail." << endl;
         exit(0);
     }
 
+    //发出中断，请求当前系统时间存入变量
+    
     int p_space = NPROC;                 // 剩余的空闲线程空间
-    cout << "\n(Here is kernel running!)" << endl;
+    pcb.name = "kernel";
+    pcb.slice_use = 99;                  // 内核进程的运行时间是系统启动至今的时间
+    pcb.slice_cnt = 0;
+    pcb.time_need = 99999 - pcb.slice_use;           
+    // cout << "\n(Here is kernel running!)" << endl;
     while (1) { 
         int request_type = 0;
-        
-        /*接收中断请求，存入request_type里*/
+        /*接收中断请求，存入request_type里***/
+
+        if (! request_type && RunQueue.size() < NPROC && ReadyQueue.size()>0)
+            {readyforward();
+            cout << "end kernel" << endl;
+            return;
+            }
         if (request_type == 1) { // 时钟中断
             // 检测正在运行的进程的运行时间
 
@@ -84,47 +97,98 @@ void Process::runKernel(int flag) { // 内核运行函数
         else if (request_type == 3) { // 异常中断
             // 
         }
-        else if (request_type == 4)  // 系统关闭，程序结束
+        else if (request_type == 4) { // 控制中断
+            // 根据不同的控制命令使用不同的功能
+
+        }
+        else if (request_type == 5)  // 系统关闭，程序结束
             return;
         else { // 没有中断时，自行将准备队列放入运行
-            if (RunQueue.size() < NPROC && !ReadyQueue.empty()) 
-                readyforward();
         }
     }
     // cout << "kernel end!" << endl;
 }
 
-int Process::create(int parent_id) {
+int Process::create(int parent_id, string p_name) { //创建进程
     if (WaitQueue.size() > MAXQUEUE) { // 判断是否有空间创建进程
         cout << "Without enough space to create new thread!" << endl;
+        this->pcb.p_date->ebx++; // kernel的ebx记录创建失败的进程
         return 0; // 返回0创建进程失败
     }
 
+    this->pcb.p_date->eax++; // kernel的eax记录创建成功的进程
+    this->pcb.p_date->ecx++; // kernel的ecx记录创建的所有进程
     Process newProcess;
+    PCBlist.push_back(&newProcess.pcb);
     ReadyQueue.push_back(newProcess);
-    int jud = 0;
-    // 调用内存分配，看内存是否有足够的内存分配（待补充）,结果返回给jud
-    // 0:没有足够的内存空间
-    // 1:有足够的内存空间
-    if (jud == 1) { 
-        if (RunQueue.size() < NPROC) { // 运行进程队列未满
-            ;
-        }
-        else {
-            ;
-        }
-    }
-    
-    
 
-
-
+    //PCB 初始化
+    // 打开对应的进程文件给PCB初始化
+    newProcess.pcb.name = p_name;
+    newProcess.pcb.parent = PCBlist[parent_id];
+    newProcess.pcb.pid = Userpid++;
+    newProcess.pcb.state = READY;
     return 1;
 }
 
 void Process::readyforward() { // 准备进程进入工作
+    cout << "kernel in ready forward" << endl;
     RunQueue.push_back(ReadyQueue[0]);
     ReadyQueue.erase(ReadyQueue.begin());
-    // 内存分配
+    //运行
+    thread subproc(&Process::run, kernel, Userpid);
+    subproc.detach();
+}
 
+void Process::wait() { // 中断进程
+    
+}
+
+void Process::wakeup() { // 唤醒进程
+
+}
+
+void Process::terminate() { // 终结进程
+
+}
+
+void Process::displayProc() { // 观察进程信息
+    // 中断提供的时间打印在第一行***
+    // 展示内容：pid 用户 优先级 占用内存百分比 进程状态 进程总时间 进程名字
+    cout << "PID\tUSER\tPR\t%MEM\tSTATE\tTIME\tname" << endl;
+    int d = kernel.pcb.time_need + kernel.pcb.slice_use;
+    float dd;
+    string s;
+    cout << "0\troot\t99\t0\trunning\t" << 99999 << "\tsystemd" << endl;
+    cout << "1\troot\t99\t0\trunning\t" << 99999 << "\tshell" << endl;
+    for (auto e : PCBlist) {
+        d = (*e).time_need + (*e).slice_use;
+        switch ((*e).state)
+        {
+        case READY:
+            s = "ready";
+            break;
+        case RUN:
+            s = "run";
+            break;
+        case SUSPEND:
+            s = "wait";
+            break;
+        case TERMINATED:
+            s = "end";
+            break;
+        default:
+            s = "unknown";
+            break;
+        }
+        dd = (*e).size / memory_size * 1.0;
+        cout << (*e).pid << "\troot\t" << (*e).priority << "\t"  << dd << "%\t"
+             << (*e).state << "\t" << d << "\t"<< (*e).name << endl; 
+    }
+    cout << "CPU\tUsingthreads:" << RunQueue.size()+2 << "/" << NPROC+2 << endl;
+    //debug:
+    cout << "runqueue:" << RunQueue.size() << endl;
+    cout << "waitqueue:" << WaitQueue.size() << endl;
+    cout << "readyqueue:" << ReadyQueue.size() << endl;
+    cout << "PCBlist:" << PCBlist.size() << endl;
 }

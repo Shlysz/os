@@ -3,6 +3,7 @@
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <iomanip>
 
 using namespace std;
 
@@ -14,15 +15,12 @@ using namespace std;
 
 //进程管理中的宏
 #define TIME_SLICE   200 // 时间片大小
-#define HIGH_PRI       0 // 高优先级
-#define LOW_PRI        1 // 低优先级
 #define MAX_SLICE_CNT 10 // 最大占用的时间片数量
-#define MAX_PROC       5 // 最大可调度的进程数量
+
 
 //定义各种状态代表的数值
 typedef int PRIORITY;
 typedef int PSTATE;      //线程状态
-#define CREATE         0 //创建
 #define READY          1 //就绪
 #define RUN            2 //运行
 #define SUSPEND        3 //阻塞挂起
@@ -77,13 +75,18 @@ public:
     int CPU_init();                     // CPU初始化
     int kernel_init();                  // 内核初始化
     void runKernel(int flag);           // 内核进程，进制状态转换必须由中断进入到这个函数来处理
+
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
-    int create(int parent_id);          // 创建线程对象（进入就绪）
-    // void run();                         // 进程运行函数
-    // void wait(Process &proc);           // 由运行状态进程挂起
-    // void wakeup(Process &proc);         // 唤醒挂起进程
+    int create(int, string);            // 创建线程对象（进入就绪）
+    
+    void wait();                     // 由运行状态进程挂起
+    void wakeup();                   // 唤醒挂起进程
     void readyforward();                // 就绪状态进一步运行或者先挂起
-    // void terminate(Process &proc);      // 终结进程 
+    void terminate();                   // 终结进程 
+    void run(int);//for debug
+
+    void displayProc();                 // 展示进程信息
+    // void checkProcess(int);             // 观察某个进程信息
 };
 
 //全局变量
@@ -94,4 +97,4 @@ extern vector<Process> RunQueue;            // 运行队列
 extern vector<Process> ReadyQueue;          // 准备队列
 extern vector<Process> WaitQueue;           // 等待队列
 extern vector<Process> DoneQueue;           // 完成队列
-
+extern Process kernel;
