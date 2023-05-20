@@ -1,5 +1,7 @@
 #include "process.h"
 #include "memory.h"
+#include "device.h"
+#include "global.h"
 
 // 全局变量
 int Userpid = 0;
@@ -151,11 +153,11 @@ string getNUM(int buf[1], PCB *newPCB){
 
 bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
 //    Interupt interupt;
-    bool interupt = false;//TODO:中断是否需要这个变量
+    bool interupt = true;//TODO:中断是否需要这个变量
     int num = runPCB->PC - &runPCB->cmdVector[0]; //运行到的指令数
 //    runPCB->PC = &runPCB->cmdVector[0];//PC指向指令数组的指令
     //TODO:上面这行放到PCB初始化中
-    while (runPCB->time_need!=0 && interupt &&(runPCB->slice_use%3!=0)){
+    while (runPCB->time_need!=0 && interupt){
         runPCB->time_need--;
         runPCB->slice_use++;
         runPCB->PC = &runPCB->cmdVector[num];
@@ -176,9 +178,9 @@ bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情�
             }
             break;
         case APPLY:
-            // if(apply_device(runPCB->pid,nowCmd.num2)==1){
+            if(apply_device(runPCB->pid,runPCB->PC.num2)==1){
             //TODO:要不要给中断一个设备占用信息
-            // }
+            }
             cout << "申请设备" << endl;
             break;
         case REALESR:
@@ -190,6 +192,7 @@ bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情�
             break;
         }
         num++;
+        if (runPCB->slice_use % 3 == 0) interupt = false;
 //       interupt.handle_interupt();
         //TODO:获得中断判断时间片是否用完的信息以及切断
     }
@@ -205,6 +208,7 @@ void run(PCB *runPCB){//运行函数
         //TODO:调度（？）
     }
     //TODO:释放内存
-    //TODO:解除中断定时器
-
+    if(runPCB->time_need==0){
+        //TODO:解除中断定时器
+    }
 }
