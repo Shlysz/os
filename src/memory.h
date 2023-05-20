@@ -1,7 +1,8 @@
 #include <cstring>
 #include <iostream>
 /*
-unsigned int ---> virtual address,physical address 32位
+unsigned int ---> virtual address,physical address 32bits,
+while the page/frame number is 20bits and the offset is 12 bits
 memory size ---> 4MB
 use 0/1 to simulate whether a memory unit is used
 TLB item num:32
@@ -20,12 +21,14 @@ pagetable_id = pid
 when a process is created, init a pagetable and randomly create a pagetableitem[] and simulate addressing from v to p
 when the process is terminated, release it   
 */
-class Pagetable {
+class Pagetable{
     public:
     int pagetable_id;  
     bool isallocated;
     int pagetableitem[pagetablesize] = {0};
-    void init_pagetable();  // todo:当进程新加入时，初始化一个页表给他
+
+    void init_pagetable();  //Init a pagetable when a process is created
+    void release_pagetable(Pagetable pt);//Release it when the process is terminated
 };
 
 /*
@@ -33,11 +36,13 @@ tlb_id = pid
 when a process is created, init a tlb and randomly create a TLBitem[] and simulate addressing from v to p
 when the process is terminated, release it   
 */
-class TranslookasideBuffer {
+class TranslookasideBuffer{
     public:
     int tlb_id;
-    int TLBitem[TLBsize];
-    void init_tlb();
+    int TLBitem[TLBsize] = {0};
+    
+    void init_tlb();//Init a TLB when a process is created
+    void release_tlb(TLB tlb);//Release it when the process is terminated
 };
 typedef TranslookasideBuffer TLB;
 /*
@@ -51,7 +56,8 @@ class Pageitem{
     int page_num;//0-1023
     bool isused;
 
-
+    void page_init(int remaining_memory);
+    void page_release(int remaining_memory); 
 };
 
 /*
@@ -63,6 +69,9 @@ class Frameitem{
     public:
     int frame_num;//0-1023
     bool isused;
+
+    void frame_init(int remaining_memory);
+    void frame_release(int remaining_memory); 
 };
 
 
