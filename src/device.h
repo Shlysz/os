@@ -1,19 +1,19 @@
-// # include <time.h>
-// # include <sys/timeb.h>
-// # include <stdio.h>
-// # include <stdlib.h>
-// # include <string.h>
-// # include <windows.h>
-// # include <list>
-// # include <algorithm>
-// # include <ctime>
-// # include <vector>
-// # include <iostream>
-// # include <cstring>
-// # include <string>
-// # include <fstream>
-// # include <sstream>
-# pragma once
+//# include <time.h>
+//# include <sys/timeb.h>
+//# include <stdio.h>
+//# include <stdlib.h>
+//# include <string.h>
+//# include <map>
+//# include <windows.h>
+//# include <list>
+//# include <algorithm>
+//# include <ctime>
+//# include <vector>
+//# include <iostream>
+//# include <cstring>
+//# include <string>
+//# include <fstream>
+//# include <sstream>
 # include "process.h"
 # include <map>
 # define MAX_DCT_LEN 32 //基础设备数量
