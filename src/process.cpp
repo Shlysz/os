@@ -158,6 +158,7 @@ string getNUM(int buf[1], PCB *newPCB){
     }
     return temp;
 }
+
 bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
 //    Interupt interupt;
     bool interupt = true;//TODO:中断是否需要这个变量
@@ -219,5 +220,6 @@ void run(PCB *runPCB){//运行函数
         //TODO:调度（？）
     }
     //TODO:释放内存
+    //TODO:解除中断定时器
 
 }
