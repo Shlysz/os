@@ -1,10 +1,12 @@
 #pragma once
+#include <chrono>
 #include <ctime>
 #include <mutex>
 #include <queue>
 #include <thread>
 #include <vector>
 
+#include "device.h"
 #include "process.h"
 
 using namespace std;
@@ -13,8 +15,13 @@ typedef void (*InteruptFunc)(int type, int, int64_t);  // 中断服务程序
 const unsigned int TIMER_INTERUPT_INTERVAL = 100;      // 100ms
 const int InteruptVectorTableSize = 32;                // 中断向量表长
 
+unsigned int time_cnt = 0;
+
 class Interupt {
    public:
+    // pid
+    int pid;
+
     // 中断类型
     int type;
     // 请求中断的设备 id
@@ -51,17 +58,20 @@ class Interupt {
     void set_priority(int type, int priority);
 
     // 产生一个中断；供外部设备使用
-    void raise_device_interupt(int type, int device_id,
-                               unsigned int priority_value);
+    void raise_device_interupt(int pid, int device_id);
+    void raise_time_interupt(int pid);
 
     // 处理中断; 由执行指令的部分调用
     // 为防止中断过多，这里会处理全部可处理的中断
     void handle_interupt();
 
     //  定时器相关
-    bool timer_is_valid;
-    bool kill_timer;
-    void enable_timer();
-    void disable_timer();
-    void stop_timer();
+
+    void send_alarm();  // 中断发送时间片提醒
+
+    // bool timer_is_valid;
+    // bool kill_timer;
+    // void enable_timer();
+    // void disable_timer();
+    // void stop_timer();
 };
