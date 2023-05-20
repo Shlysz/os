@@ -2,7 +2,7 @@
 #include <iostream>
 /*
 unsigned int ---> virtual address,physical address 32bits,
-while the page/frame number is 20bits and the offset is 12 bits
+while the page/frame number is 20 bits and the offset is 12 bits
 memory size ---> 4MB
 use 0/1 to simulate whether a memory unit is used
 TLB item num:32
@@ -36,15 +36,15 @@ tlb_id = pid
 when a process is created, init a tlb and randomly create a TLBitem[] and simulate addressing from v to p
 when the process is terminated, release it   
 */
-class TranslookasideBuffer{
+class TLB{
     public:
     int tlb_id;
     int TLBitem[TLBsize] = {0};
-    
+
     void init_tlb();//Init a TLB when a process is created
     void release_tlb(TLB tlb);//Release it when the process is terminated
 };
-typedef TranslookasideBuffer TLB;
+//typedef TranslookasideBuffer TLB;
 /*
 Page_num range: 0~1023
 size of each page : 4 * 1024
