@@ -1,5 +1,6 @@
 #include "shell.h"
 #include "process.h"
+#include "device.h"
 #include "FileMethod.h"
 #include "FileSystem.h"
 #include "global.h"
