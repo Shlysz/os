@@ -83,8 +83,8 @@ class MMU{
 
     public:
     
-    void Memory_allocate(int remaining_memory);
-    void Memory_release(int remaining_memory);
+    void Memory_allocate(int pid);
+    void Memory_release(int pid);
     void OPT_replace();
     void Find_paddress(int pid,TLB tlb,Pagetable pt);
     int Query_memory();
