@@ -75,47 +75,13 @@ int Process::kernel_init() {  // 内核初始化
     return ret;
 }
 
-void Process::runKernel(int flag) { // 内核运行函数
-    if (!flag) { //初始化失败结束程序
-        cout << "\nsystemd init fail." << endl;
-        exit(0);
-    }
-
+void Process::scheduler() { // 内核运行函数
     //发出中断，请求当前系统时间存入变量
-    
-    int p_space = NPROC;                 // 剩余的空闲线程空间    
-    
-    while (1) { 
-        if (!ReadyQueue.empty())
+    while (!ReadyQueue.empty()) { 
+        if (RunQueue.size() < NPROC)
             readyforward();
-
-        // int request_type = 0;
-        // /*接收中断请求，存入request_type里***/
-
-        // if (! request_type && RunQueue.size() < NPROC && ReadyQueue.size()>0)
-        //     {
-        //     //readyforward();
-        //     cout << "end kernel" << endl;
-        //     return;
-        //     }
-        // if (request_type == 1) { // 时钟中断
-        //     // 检测正在运行的进程的运行时间
-
-        // } else if (request_type == 2) {  // 设备中断
-        //     // 将进程挂起并切换,或者进程完成输入中断返回
-
-        // }
-        // else if (request_type == 3) { // 异常中断
-        //     // 
-        // }
-        // else if (request_type == 4) { // 控制中断
-        //     // 根据不同的控制命令使用不同的功能
-
-        // }
-        // else if (request_type == 5)  // 系统关闭，程序结束
-        //     return;
-        // else { // 没有中断时，自行将准备队列放入运行
-        // }
+        
+        
     }
     // cout << "kernel end!" << endl;
 }
@@ -140,12 +106,13 @@ int Process::create(string p_name) { //创建进程
     string buff;
     cmd instuction;
     while (file >> buff) {   // 存好进程的指令栈
-        instuction.num << atoi(buff.c_str());
+        instuction.num = atoi(buff.c_str());
         file >> buff;
-        instuction.num2 << atoi(buff.c_str());
+        instuction.num2 = atoi(buff.c_str());
         if (instuction.num==0 || instuction.num==1) 
             file >> instuction.name;
         newProcess.pcb.cmdVector.push_back(instuction);
+        // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
     }
     newProcess.pcb.PC = &newProcess.pcb.cmdVector[0];
     newProcess.pcb.size = newProcess.pcb.cmdVector.size() * 100 * 1024; // 每条指令使得进程大小增大100Kb
@@ -156,6 +123,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     Processes.push_back(newProcess);
     ReadyQueue.push_back(newProcess.pcb.pid);
+    cout << "debug info, another after creat, pid:" << Processes[0].pcb.pid << " cmd num:" << Processes[0].pcb.PC->num2 << endl;
     return 1;
 }
 
@@ -163,10 +131,14 @@ void Process::readyforward() { // 准备进程进入工作
     Processes[ReadyQueue[0]].pcb.state = RUN;
     RunQueue.push_back(ReadyQueue[0]);
     ReadyQueue.erase(ReadyQueue.begin());
-    if (RunQueue.size() == 0)
-        thread sub_proc1(&Process::run, Processes[RunQueue.front()], &Processes[RunQueue.front()].pcb); 
-    else 
-        thread sub_proc0(&Process::run, Processes[RunQueue.back()], &Processes[RunQueue.back()].pcb);    
+    if (RunQueue.size() == 1) {
+        thread sub_proc1(&Process::run, kernel, &Processes[RunQueue.front()-2].pcb); 
+        sub_proc1.detach();
+    }
+    else if (RunQueue.size() == 2) {
+        thread sub_proc0(&Process::run, kernel, &Processes[RunQueue.back()-2].pcb);
+        sub_proc0.detach();
+    } 
 }
 
 void Process::wait(int id) { // 中断进程
@@ -249,6 +221,7 @@ void Process::displayProc() { // 观察进程信息
 
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
     // int num = runPCB->PC - &(runPCB->cmdVector[0]); //运行到的指令数
+    cout << "debug info, cmd num:" << runPCB->PC->num << " num2:" << runPCB->PC->num2 <<endl;
     Interupt tmp_interupt;
     bool intertemp = true; // 判断是否申请释放设备中断
     while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
@@ -299,12 +272,12 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
 }
 
 void Process::run(PCB *runPCB) { // 运行函数
+    cout << "debug info in run, cmd num:" << runPCB->PC->num << " num2:" <<  runPCB->PC->num2 <<endl;
     //TODO:申请内存
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
-    cout << "running process PID:" << runPCB->pid << " needTime:" << runPCB->time_need << endl;
     if(runCmd(runPCB)){
-        cout << "running process PID:" << runPCB->pid <<" silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
+        cout << "debug info, after r:running process PID:" << runPCB->pid <<"silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block
     }else{
         cout << "running process PID:" << runPCB->pid << " running fail" << endl;
