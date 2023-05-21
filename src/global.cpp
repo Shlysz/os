@@ -6,3 +6,5 @@
 diskBlock *diskblock=new diskBlock();
 
 FileSystem*fs=new FileSystem();
+
+MMU *Mmu = new MMU();
