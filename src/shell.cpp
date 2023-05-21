@@ -87,6 +87,8 @@ int Shell::parse() {
         return 1;
     } else if (all_params[0] == "fork") {  // 创建一个进程
         kernel.create(all_params[1]);
+        cout << "debug info, shell, pid:" << Processes[0].pcb.pid << " cmd num:" << Processes[0].pcb.PC->num2 << endl;
+        kernel.scheduler();
         return 1;
     } else if (params == "exit") {  // 退出程序
         /*产生一个特殊的中断信号，保证优先被处理*/

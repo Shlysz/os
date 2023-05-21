@@ -92,7 +92,7 @@ public:
 
     int CPU_init();                     // CPU初始化
     int kernel_init();                  // 内核初始化
-    void runKernel(int flag);           // 内核进程，进制状态转换必须由中断进入到这个函数来处理
+    void scheduler();                   // 内核进程，进制状态转换必须由中断进入到这个函数来处理
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
     int create(string);                 // 创建线程对象（进入就绪）
     void readyforward();                // 就绪状态进一步运行或者先挂起
@@ -114,3 +114,4 @@ extern vector<int> ReadyQueue;          // 准备队列
 extern vector<int> WaitQueue;           // 等待队列
 extern vector<int> DoneQueue;           // 完成队列
 extern Process kernel;
+extern vector<Process> Processes;       // 所有的进程对象
