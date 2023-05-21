@@ -1,5 +1,5 @@
 #include "shell.h"
-#include "device.h"
+#include "process.h"
 #include "FileMethod.h"
 #include "FileSystem.h"
 #include "global.h"
@@ -70,11 +70,11 @@ int Shell::parse() {
         return 0;
     } else if (all_params[0] == "rm") {
         if (fs->rm(all_params[1])) return 1;
-        cout << "rm failed,may your file is not exist" << endl;
+        cout << "rm failed, may your file is not exist" << endl;
         return 0;
     } else if (params == "top") {  // 列出所有进程的信息
         std::cout << "\nCurrent Process: " << std::endl;
-        // TODO: 在这里实现列出所有当前进程的信息
+        kernel.displayProc();
         return 1;
     } else if (all_params[0] == "mem") {
         // TODO:显示剩余的内存大小
@@ -82,7 +82,13 @@ int Shell::parse() {
         std::cout << "Size of free memory is:" << endl;
         return 1;
     } else if (params == "fork") {  // 创建一个进程
-        /*产生一个中断信号，进入中断*/
+        int p_id = 0;
+        if (all_params.size() > 1)
+            p_id == atoi(all_params[1].c_str());
+        if (all_params.size() > 2)
+            kernel.create(p_id, all_params[2]);
+        else
+            kernel.create(p_id, "");
         return 1;
     } else if (params == "exit") {  // 退出程序
         /*产生一个特殊的中断信号，保证优先被处理*/
