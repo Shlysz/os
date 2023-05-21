@@ -16,4 +16,6 @@ int test() {
     inte6.disable_time_interupt(24);
     Interupt inte7;
     inte7.raise_panic(34, 2);
+
+    return 0;
 }

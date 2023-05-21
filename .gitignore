@@ -5,8 +5,6 @@
 .DS_Store
 CMakeLists.txt
 
-# Test files
-interupt_test.cpp
 
 # Binary
 os
