@@ -33,8 +33,6 @@ typedef int PSTATE;      //线程状态
 #define DELEFILE       1 //删除文件
 #define APPLY          2 //申请设备
 #define REALESR        3 //释放设备
-#define BLOCKCMD       4 //阻塞其他进程
-#define WAKE           5 //唤醒其他进程
 
 struct CentralProcessingUnit { // 处理器
     unsigned int eax;
