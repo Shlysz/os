@@ -248,37 +248,37 @@ void Process::displayProc() { // 观察进程信息
 }
 
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
-    int num = runPCB->PC - &(runPCB->cmdVector[0]); //运行到的指令数
+    // int num = runPCB->PC - &(runPCB->cmdVector[0]); //运行到的指令数
     Interupt tmp_interupt;
-    bool intertemp = true;
-    while (runPCB->time_need!=0 && runPCB->slice_use % 3 != 0 && intertemp){                           
-        runPCB->PC = &runPCB->cmdVector[num];       
-        switch (runPCB->cmdVector[num].num)
+    bool intertemp = true; // 判断是否申请释放设备中断
+    while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
+        // runPCB->PC = &runPCB->cmdVector[num];       
+        switch (runPCB->PC->num)
         {
         case CREAFILE:
-            if(fs->touch(runPCB->cmdVector[num].name)){
+            if(fs->touch(runPCB->PC->name)){
                 cout << "File created successfully" << endl;
             }else{
                 cout << "File creation failure" <<endl;
             }
             break;
         case DELEFILE:
-            if (fs->rm(runPCB->cmdVector[num].name)){
+            if (fs->rm(runPCB->PC->name)){
                 cout << "Deleted file successfully" << endl;
             } else{
                 cout << "File deletion failure" << endl;
             }
             break;
         case APPLY:
-            tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->cmdVector[num].num2);
+            tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->PC->num2);
             intertemp = false;
             //TODO:schedule:block
-            cout << "Apply for device:" << runPCB->cmdVector[num].num2 << endl;
+            cout << "Apply for device:" << runPCB->PC->num2 << endl;
             break;
         case REALESR:
-            tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->cmdVector[num].num2);
+            tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->PC->num2);
             intertemp = false;
-            cout << "Release device:" << runPCB->cmdVector[num].num2 << endl;
+            cout << "Release device:" << runPCB->PC->num2 << endl;
             break;
         case DEBUG:
             cout << "This is a test proc!" << endl;
@@ -287,13 +287,14 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             cout << "Instruction error" << endl;
             break;
         }
-        num++;
-        runPCB->PC = &(runPCB->cmdVector[num]);
+        runPCB->PC++;
+        runPCB->slice_cnt++;
         runPCB->time_need--;
         runPCB->slice_use++;
 
         this_thread::sleep_for(std::chrono::seconds(1));
     }
+    runPCB->slice_use = 0;
     return true;
 }
 
@@ -301,12 +302,12 @@ void Process::run(PCB *runPCB) { // 运行函数
     //TODO:申请内存
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
-    cout << "running process PID:" << runPCB->pid << "needTime:" << runPCB->time_need << endl;
+    cout << "running process PID:" << runPCB->pid << " needTime:" << runPCB->time_need << endl;
     if(runCmd(runPCB)){
-        cout << "running process PID:" << runPCB->pid <<"silece_use:" << runPCB->slice_use << endl;//输出程序完成，时间等等
+        cout << "running process PID:" << runPCB->pid <<" silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block
     }else{
-        cout << "running process PID:" << runPCB->pid << ", running fail" << endl;
+        cout << "running process PID:" << runPCB->pid << " running fail" << endl;
     }
     //TODO:释放内存
     tmp_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
