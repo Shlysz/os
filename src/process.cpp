@@ -196,6 +196,7 @@ void Process::displayProc() { // 观察进程信息
 
 bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
     int num = runPCB->PC - &(runPCB->cmdVector[0]); //运行到的指令数
+    Interupt tmp_interupt;
     while (runPCB->time_need!=0 && runPCB->slice_use % 3 == 0){                           
         runPCB->PC = &runPCB->cmdVector[num];       
         switch (runPCB->cmdVector[num].num)
@@ -215,7 +216,6 @@ bool runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情�
             }
             break;
         case APPLY:
-            Interupt tmp_interupt;
             tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->cmdVector[num].num2);
             //TODO:schedule:block
             cout << "Apply for device:" << runPCB->cmdVector[num].num2 << endl;
