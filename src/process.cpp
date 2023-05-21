@@ -76,6 +76,7 @@ int Process::kernel_init() {  // 内核初始化
 }
 
 void Process::scheduler() { // 内核运行函数
+    displayPcb(&Processes[0].pcb);
     //发出中断，请求当前系统时间存入变量
     while (!ReadyQueue.empty()) { 
         if (RunQueue.size() < NPROC)
@@ -114,7 +115,7 @@ int Process::create(string p_name) { //创建进程
         newProcess.pcb.cmdVector.push_back(instuction);
         // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
     }
-    newProcess.pcb.PC = &newProcess.pcb.cmdVector[0];
+    newProcess.pcb.PC = 0;
     newProcess.pcb.size = newProcess.pcb.cmdVector.size() * 100 * 1024; // 每条指令使得进程大小增大100Kb
     newProcess.pcb.time_need = newProcess.pcb.cmdVector.size(); // 需要的时间单位等于指令的数量 
     newProcess.pcb.name = p_name;
@@ -123,7 +124,6 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     Processes.push_back(newProcess);
     ReadyQueue.push_back(newProcess.pcb.pid);
-    cout << "debug info, another after creat, pid:" << Processes[0].pcb.pid << " cmd num:" << Processes[0].pcb.PC->num2 << endl;
     return 1;
 }
 
@@ -220,38 +220,36 @@ void Process::displayProc() { // 观察进程信息
 }
 
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
-    // int num = runPCB->PC - &(runPCB->cmdVector[0]); //运行到的指令数
-    cout << "debug info, cmd num:" << runPCB->PC->num << " num2:" << runPCB->PC->num2 <<endl;
+    runPCB->PC = 0;
     Interupt tmp_interupt;
     bool intertemp = true; // 判断是否申请释放设备中断
     while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
-        // runPCB->PC = &runPCB->cmdVector[num];       
-        switch (runPCB->PC->num)
+        switch (runPCB->cmdVector[(runPCB->PC)].num)
         {
         case CREAFILE:
-            if(fs->touch(runPCB->PC->name)){
+            if(fs->touch(runPCB->cmdVector[(runPCB->PC)].name)){
                 cout << "File created successfully" << endl;
             }else{
                 cout << "File creation failure" <<endl;
             }
             break;
         case DELEFILE:
-            if (fs->rm(runPCB->PC->name)){
+            if (fs->rm(runPCB->cmdVector[(runPCB->PC)].name)){
                 cout << "Deleted file successfully" << endl;
             } else{
                 cout << "File deletion failure" << endl;
             }
             break;
         case APPLY:
-            tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->PC->num2);
+            tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
             intertemp = false;
             //TODO:schedule:block
-            cout << "Apply for device:" << runPCB->PC->num2 << endl;
+            cout << "Apply for device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
         case REALESR:
-            tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->PC->num2);
+            tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
             intertemp = false;
-            cout << "Release device:" << runPCB->PC->num2 << endl;
+            cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
         case DEBUG:
             cout << "This is a test proc!" << endl;
@@ -272,7 +270,6 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
 }
 
 void Process::run(PCB *runPCB) { // 运行函数
-    cout << "debug info in run, cmd num:" << runPCB->PC->num << " num2:" <<  runPCB->PC->num2 <<endl;
     //TODO:申请内存
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
@@ -285,4 +282,11 @@ void Process::run(PCB *runPCB) { // 运行函数
     //TODO:释放内存
     tmp_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
     return ;
+}
+void Process::displayPcb(PCB *runPCB){
+    cout << runPCB->pid <<runPCB->slice_use<<  runPCB->slice_cnt<< runPCB->time_need
+    << runPCB->time_need << runPCB->size << runPCB->pagetable_addr <<runPCB->pagetable_pos
+    <<runPCB->pagetable_len<< runPCB->page_write << runPCB->pagein_time<<endl;
+
+    cout<< runPCB->cmdVector[(runPCB->PC)].num <<"  "<< runPCB->cmdVector[0].num<<endl;
 }

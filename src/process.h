@@ -76,7 +76,7 @@ typedef struct ProgramControlBlock { // PCB表结构
     std::string name;   // 进程名称
     struct ProgramControlBlock *parent;   // 父进程
     struct CentralProcessingUnit *p_date; // 中断后进程存储此进程的共享资源数据
-    cmd* PC;//指令PC指针
+    int PC;//指令PC指针
     vector<cmd> cmdVector; // 指令数组
     /*这里应该补充打开文件，用一个结构ofile来保存所有在这个进程打开的文件*/
     /*还得有一个变量指向当前进程的工作目录*/
@@ -102,6 +102,7 @@ public:
     void wakeup(int);                   // 唤醒挂起进程
     void terminate(int);                // 终结进程 
     void displayProc();                 // 展示进程信息
+    void displayPcb(PCB *runPCB);       //打印PCB信息
     // void checkProcess(int);          // 观察某个进程信息
 };
 
