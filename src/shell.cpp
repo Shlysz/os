@@ -96,7 +96,7 @@ int Shell::parse() {
         return 0;
     }
     else if(params == "deviceinfo"){
-        // test_init();
+        // test_init();     // 测试用设备初始化
         show_device_all();
         return 1;
     }
