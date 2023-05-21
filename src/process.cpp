@@ -256,7 +256,7 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
         switch (runPCB->cmdVector[num].num)
         {
         case CREAFILE:
-            if(fs->mkdir(runPCB->cmdVector[num].name)){
+            if(fs->touch(runPCB->cmdVector[num].name)){
                 cout << "File created successfully" << endl;
             }else{
                 cout << "File creation failure" <<endl;
