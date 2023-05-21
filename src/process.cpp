@@ -2,6 +2,8 @@
 #include <fstream>
 #include "process.h"
 #include "memory.h"
+#include "global.h"
+#include "device.h"
 #include "interupt.h"
 
 using namespace std;
@@ -80,37 +82,39 @@ void Process::runKernel(int flag) { // 内核运行函数
 
     //发出中断，请求当前系统时间存入变量
     
-    int p_space = NPROC;                 // 剩余的空闲线程空间
-             
-    // cout << "\n(Here is kernel running!)" << endl;
+    int p_space = NPROC;                 // 剩余的空闲线程空间    
+    
     while (1) { 
-        int request_type = 0;
-        /*接收中断请求，存入request_type里***/
+        if (!ReadyQueue.empty())
+            readyforward();
 
-        if (! request_type && RunQueue.size() < NPROC && ReadyQueue.size()>0)
-            {
-            //readyforward();
-            cout << "end kernel" << endl;
-            return;
-            }
-        if (request_type == 1) { // 时钟中断
-            // 检测正在运行的进程的运行时间
+        // int request_type = 0;
+        // /*接收中断请求，存入request_type里***/
 
-        } else if (request_type == 2) {  // 设备中断
-            // 将进程挂起并切换,或者进程完成输入中断返回
+        // if (! request_type && RunQueue.size() < NPROC && ReadyQueue.size()>0)
+        //     {
+        //     //readyforward();
+        //     cout << "end kernel" << endl;
+        //     return;
+        //     }
+        // if (request_type == 1) { // 时钟中断
+        //     // 检测正在运行的进程的运行时间
 
-        }
-        else if (request_type == 3) { // 异常中断
-            // 
-        }
-        else if (request_type == 4) { // 控制中断
-            // 根据不同的控制命令使用不同的功能
+        // } else if (request_type == 2) {  // 设备中断
+        //     // 将进程挂起并切换,或者进程完成输入中断返回
 
-        }
-        else if (request_type == 5)  // 系统关闭，程序结束
-            return;
-        else { // 没有中断时，自行将准备队列放入运行
-        }
+        // }
+        // else if (request_type == 3) { // 异常中断
+        //     // 
+        // }
+        // else if (request_type == 4) { // 控制中断
+        //     // 根据不同的控制命令使用不同的功能
+
+        // }
+        // else if (request_type == 5)  // 系统关闭，程序结束
+        //     return;
+        // else { // 没有中断时，自行将准备队列放入运行
+        // }
     }
     // cout << "kernel end!" << endl;
 }
@@ -242,59 +246,68 @@ void Process::displayProc() { // 观察进程信息
     return;
 }
 
-bool runCmd(PCB *runPCB) { // 运行进程的指令，如果没有被中断等情况则返回1，否则返回0
-//    Interupt interupt;
-    bool interupt = true;//TODO:中断是否需要这个变量
-    int num = runPCB->PC - &runPCB->cmdVector[0]; //运行到的指令数
-//    runPCB->PC = &runPCB->cmdVector[0];//PC指向指令数组的指令
-    //TODO:上面这行放到PCB初始化中
-    while (&runPCB->cmdVector.back() != runPCB->PC && interupt){
-        runPCB->PC = &runPCB->cmdVector[num];
-        switch (runPCB->PC->num)
+bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
+    int num = runPCB->PC - &(runPCB->cmdVector[0]); //运行到的指令数
+    Interupt tmp_interupt;
+    bool intertemp = true;
+    while (runPCB->time_need!=0 && runPCB->slice_use % 3 != 0 && intertemp){                           
+        runPCB->PC = &runPCB->cmdVector[num];       
+        switch (runPCB->cmdVector[num].num)
         {
         case CREAFILE:
-            if(fs->mkdir(runPCB->PC->name)){
-                cout << "创建成功" << endl;
+            if(fs->mkdir(runPCB->cmdVector[num].name)){
+                cout << "File created successfully" << endl;
             }else{
-                cout << "创建失败" <<endl;
+                cout << "File creation failure" <<endl;
             }
             break;
         case DELEFILE:
-            if (fs->rm(runPCB->PC->name)){
-                cout << "删除成功" << endl;
+            if (fs->rm(runPCB->cmdVector[num].name)){
+                cout << "Deleted file successfully" << endl;
             } else{
-                cout << "删除失败" << endl;
+                cout << "File deletion failure" << endl;
             }
             break;
         case APPLY:
-            // if(apply_device(runPCB->pid,nowCmd.num2)==1){
-            //TODO:要不要给中断一个设备占用信息
-            // }
-            cout << "申请设备" << endl;
+            tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->cmdVector[num].num2);
+            intertemp = false;
+            //TODO:schedule:block
+            cout << "Apply for device:" << runPCB->cmdVector[num].num2 << endl;
             break;
         case REALESR:
-            //release_device(runPCB->pid, nowCmd.num2);
-            cout << "释放设备" << endl;
+            tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->cmdVector[num].num2);
+            intertemp = false;
+            cout << "Release device:" << runPCB->cmdVector[num].num2 << endl;
+            break;
+        case DEBUG:
+            cout << "This is a test proc!" << endl;
             break;
         default:
-            cout << "指令错误" << endl;
+            cout << "Instruction error" << endl;
             break;
         }
         num++;
-//       interupt.handle_interupt();
-        //TODO:获得中断判断时间片是否用完的信息以及切断
+        runPCB->PC = &(runPCB->cmdVector[num]);
+        runPCB->time_need--;
+        runPCB->slice_use++;
+
+        this_thread::sleep_for(std::chrono::seconds(1));
     }
-    return interupt;
+    return true;
 }
 
 void Process::run(PCB *runPCB) { // 运行函数
     //TODO:申请内存
-    //TODO:申请中断定时器
+    Interupt tmp_interupt;
+    tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     cout << "running process PID:" << runPCB->pid << "needTime:" << runPCB->time_need << endl;
-    if(!runCmd(runPCB)){
-        //TODO:调度（？）
+    if(runCmd(runPCB)){
+        cout << "running process PID:" << runPCB->pid <<"silece_use:" << runPCB->slice_use << endl;//输出程序完成，时间等等
+        //TODO:调度（？）schedule:block
+    }else{
+        cout << "running process PID:" << runPCB->pid << ", running fail" << endl;
     }
     //TODO:释放内存
-    //TODO:解除中断定时器
-
+    tmp_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
+    return ;
 }

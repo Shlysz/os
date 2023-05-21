@@ -2,8 +2,6 @@
 #include "shell.h"
 #include "ui.h"
 
-
-
 int main() {
     int kernel_flag = kernel.kernel_init();
     thread systemd(&Process::runKernel, kernel, kernel_flag); // 创建内核进程
