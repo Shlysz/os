@@ -1,5 +1,5 @@
 #include "shell.h"
-
+#include "device.h"
 #include "FileMethod.h"
 #include "FileSystem.h"
 #include "global.h"
@@ -87,7 +87,13 @@ int Shell::parse() {
     } else if (params == "exit") {  // 退出程序
         /*产生一个特殊的中断信号，保证优先被处理*/
         return 0;
-    } else {  // 其余未实现的使用默认 Linux 系统 bash 功能
+    }
+    else if(params == "deviceinfo"){
+        test_init();
+        show_device_all();
+        return 1;
+    }
+     else {  // 其余未实现的使用默认 Linux 系统 bash 功能
         system(params.c_str());
         return 1;
     }

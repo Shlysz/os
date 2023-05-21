@@ -16,8 +16,8 @@
 # pragma once
 # include "process.h"
 # include <map>
-# define MAX_DCT_LEN 32 //基础设备数量
-# define MAX_SDT_LEN 32 //基础设备数量
+# define MAX_DCT_LEN  5//基础设备数量
+// # define MAX_SDT_LEN 12 //基础设备数量
 
 using namespace std;
 
@@ -41,7 +41,7 @@ using namespace std;
 // } PCB, *PCBptr;
 
 typedef struct PCBPtrQueue{
-    PCBptr pcbptr;
+    int pcbid;
     struct PCBPtrQueue *next;
 }PCBPtrQueue, *PCBPtrQueueptr;
 
@@ -56,7 +56,7 @@ typedef struct QueueInfo{
 // DCT表项
 typedef struct DeviceControlTableItem {
 	int deviceID;
-	bool busy;
+	int busy;
     QInfoptr QueProInfo;
 }DCTItem, * DCTItemptr;
 
@@ -66,24 +66,24 @@ typedef struct DeviceControlTable {
 	DCTItem DCTitem[MAX_DCT_LEN];
 }DCT, * DCTptr;
 
-// SDT系统设备表项
-typedef struct SystemDeviceTableItem {
-	int deviceID;
-	DCTItem* DCTItemPtr;
+// // SDT系统设备表项
+// typedef struct SystemDeviceTableItem {
+// 	int deviceID;
+// 	DCTItem* DCTItemPtr;
+// }SDTItem, * SDTItemptr;
 
-}SDTItem, * SDTItemptr;
-
-// SDT 系统设备表
-typedef struct SystemDeviceTable {
-	int size;
-	SDTItem	SDTitem[MAX_SDT_LEN];
-}SDT, * SDTptr;
+// // SDT 系统设备表
+// typedef struct SystemDeviceTable {
+// 	int size;
+// 	SDTItem	SDTitem[MAX_SDT_LEN];
+// }SDT, * SDTptr;
 
 
 // 初始化设备信息
 void init_device();
 int registe_device(int deviceID);
 int get_index_by_deviceID(int deviceID);
+int device_register(int deviceID);
 
 /**
  * 进程请求设备
@@ -101,4 +101,11 @@ int apply_device(int pid, int deviceID);
 */
 int release_device(int pid, int deviceID);
 
+// 显示该设备信息
+void show_device(int deviceID);
 
+// 显示所有设备信息
+void show_device_all();
+
+// 测试用设备赋值
+void test_init();
