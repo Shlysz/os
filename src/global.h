@@ -6,8 +6,12 @@
 #define FILESYSTEM_GLOBAL_H
 #include "FileSystem.h"
 #include "diskBlock.h"
+#include "memory.h"
+
 
 extern diskBlock *diskblock;
 extern FileSystem*fs;
+extern MMU *Mmu;
+
 
 #endif //FILESYSTEM_GLOBAL_H
