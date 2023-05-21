@@ -81,14 +81,11 @@ int Shell::parse() {
         // return memory剩余的大小
         std::cout << "Size of free memory is:" << endl;
         return 1;
-    } else if (params == "fork") {  // 创建一个进程
-        int p_id = 0;
-        if (all_params.size() > 1)
-            p_id == atoi(all_params[1].c_str());
-        if (all_params.size() > 2)
-            kernel.create(p_id, all_params[2]);
-        else
-            kernel.create(p_id, "");
+    } else if (params == "fork") {
+        kernel.create("blank");
+        return 1;
+    } else if (all_params[0] == "fork") {  // 创建一个进程
+        kernel.create(all_params[1]);
         return 1;
     } else if (params == "exit") {  // 退出程序
         /*产生一个特殊的中断信号，保证优先被处理*/

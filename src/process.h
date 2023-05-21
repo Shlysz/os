@@ -93,26 +93,23 @@ public:
     int CPU_init();                     // CPU初始化
     int kernel_init();                  // 内核初始化
     void runKernel(int flag);           // 内核进程，进制状态转换必须由中断进入到这个函数来处理
-
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
-    int create(int, string);            // 创建线程对象（进入就绪）
-
-
-    void wait();                        // 由运行状态进程挂起
-    void wakeup();                      // 唤醒挂起进程
+    int create(string);                 // 创建线程对象（进入就绪）
     void readyforward();                // 就绪状态进一步运行或者先挂起
-    void terminate();                   // 终结进程 
-
+    void run(PCB *runPCB);
+    void wait(int);                     // 由运行状态进程挂起
+    void wakeup(int);                   // 唤醒挂起进程
+    void terminate(int);                // 终结进程 
     void displayProc();                 // 展示进程信息
-    // void checkProcess(int);             // 观察某个进程信息
+    // void checkProcess(int);          // 观察某个进程信息
 };
 
 //全局变量
 extern int Userpid;
 extern struct CentralProcessingUnit CPU;
 extern struct ShareResource CPU_flag;
-extern vector<Process> RunQueue;            // 运行队列
-extern vector<Process> ReadyQueue;          // 准备队列
-extern vector<Process> WaitQueue;           // 等待队列
-extern vector<Process> DoneQueue;           // 完成队列
+extern vector<int> RunQueue;            // 运行队列
+extern vector<int> ReadyQueue;          // 准备队列
+extern vector<int> WaitQueue;           // 等待队列
+extern vector<int> DoneQueue;           // 完成队列
 extern Process kernel;
