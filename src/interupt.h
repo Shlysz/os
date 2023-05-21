@@ -27,15 +27,17 @@ class Interupt {
     // 请求中断的设备 id
     int device_id;
 
-    void do_nothing(int pid);       // 默认中断函数
-    void panic(int pid, int type);  // 异常中断
+    int panic_type;  // 异常中断类型
+
+    void do_nothing(int pid);            // 默认中断函数
+    int raise_panic(int pid, int type);  // 异常中断
 
     // 初始化中断
     void init_interupt();
 
     // 产生一个中断；供外部设备使用
-    int raise_device_interupt(int pid, int device_id);
-    int disable_device_interupt(int pid, int device_id);
+    void raise_device_interupt(int pid, int device_id);
+    void disable_device_interupt(int pid, int device_id);
 
     void raise_time_interupt(int pid);
     void disable_time_interupt(int pid);
