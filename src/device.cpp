@@ -1,137 +1,91 @@
 #include "device.h"
 
-DCT* DCTPtr = (DCTptr)malloc(sizeof(DCTptr));
+device dcb;
 
-void init_device() {
+void device::init_device() {
 	int i;
-	// SDTPtr = (SDT *)memPtr->selMem;
-    // SDT * SDTPtr;
-	// SDTPtr->size = 0;
-	// DCTPtr = (DCT*)(memPtr->selMem + sizeof(SDT));
-    // DCT * DCTPtr;
-	DCTPtr->size = 0;
 	for (i = 0; i < MAX_DCT_LEN; i++) {
-		// registe_device(i);
-		device_register(i);
+		dcb.device_register(i);
 	}
-
 }
 
-// int registe_device(int deviceID) {
-// 	SDTItem* tmpSDTItemPtr;
-// 	tmpSDTItemPtr = &(SDTPtr->SDTitem[SDTPtr->size]);
-// 	tmpSDTItemPtr->deviceID = deviceID;
-// 	tmpSDTItemPtr->DCTItemPtr = &(DCTPtr->DCTitem[DCTPtr->size]);
-// 	tmpSDTItemPtr->DCTItemPtr->busy = false;
-// 	tmpSDTItemPtr->DCTItemPtr->deviceID = deviceID;
-// 	tmpSDTItemPtr->DCTItemPtr->QueProInfo->QueueHead = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueue)); 
-// 	// tmpSDTItemPtr->DCTItemPtr->QueProInfo->Qplist = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueue)); 
-// 	// if (tmpSDTItemPtr->DCTItemPtr->waitingProInfo->waitingQueueHead != NULL) {
-// 	tmpSDTItemPtr->DCTItemPtr->QueProInfo->QueueHead->next = NULL;
-// 	// tmpSDTItemPtr->DCTItemPtr->waitingProInfo->wplist->next = NULL;
-// 	// }
-// 	tmpSDTItemPtr->DCTItemPtr->QueProInfo->QueueEnd = tmpSDTItemPtr->DCTItemPtr->QueProInfo->QueueHead;
-// 	SDTPtr->size += 1;
-// 	DCTPtr->size += 1;
-// 	return 1;
-// }
+int device::device_register(int deviceID){
 
-int device_register(int deviceID){
-	DCTItem * tmpDCTItemPtr = &(DCTPtr->DCTitem[DCTPtr->size]);
-	tmpDCTItemPtr->busy = 0;
-	tmpDCTItemPtr->deviceID = deviceID;
+	device tmpdev;
+	tmpdev.dct_item.deviceID = deviceID;
+	tmpdev.dct_item.busy = 0;
 
-	tmpDCTItemPtr->QueProInfo = (QInfoptr)malloc(sizeof(QInfoptr));
-	tmpDCTItemPtr->QueProInfo->QueueHead = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueueptr));
-	tmpDCTItemPtr->QueProInfo->QueueEnd = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueueptr));
-	tmpDCTItemPtr->QueProInfo->QueueHead->next = nullptr;
-	tmpDCTItemPtr->QueProInfo->size = 0;
-	DCTPtr->size += 1;
-	// printf("%d  and  %d\n", deviceID, DCTPtr->size);
-	// show_device(deviceID);
-	
+	dcb.dct.push_back(tmpdev.dct_item);
 	return 0;
 }
 
-int get_index_by_deviceID(int deviceID) {
-	int i;
-	for (i = 0; i < DCTPtr->size; i++) {
-		if (DCTPtr->DCTitem[i].deviceID == deviceID)
-			return i;
+// int get_index_by_deviceID(int deviceID) {
+// 	int i;
+// 	for (i = 0; i < DCTPtr->size; i++) {
+// 		if (DCTPtr->DCTitem[i].deviceID == deviceID)
+// 			return i;
+// 	}
+// 	return -1;
+// }
+
+device::DCTItem & device::get_device_item(int device_id){
+	DCTItem tmpitem;
+	for (auto dct_item = dcb.dct.begin(); dct_item != dcb.dct.end(); dct_item++){
+		if ((*dct_item).deviceID == device_id)
+			return (*dct_item);
 	}
-	return -1;
+	return tmpitem;
 }
 
-int apply_device(int pid, int deviceID) {
-	int index = get_index_by_deviceID(deviceID);
-	DCTItem* tmpDCTPtr;
+int device::have_device(int device_id){
+	for (auto dct_item = dcb.dct.begin(); dct_item != dcb.dct.end(); dct_item++){
+		if ((*dct_item).deviceID == device_id)
+			return 1;
+	}
+	return 0;
+}
 
-	if (index == -1) {
+int device::apply_device(int pid, int deviceID) {
+	if (dcb.have_device(deviceID) == 0) {
 		printf("UNKNOW DEVICE : %d\n", deviceID);
 		return 0;
 	}
 	else {
-		tmpDCTPtr = &(DCTPtr->DCTitem[index]);
-		
-		if(tmpDCTPtr->busy == 0){
-			// printf("%d\n", index);
-			tmpDCTPtr->QueProInfo->QueueHead = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueue));
-			tmpDCTPtr->QueProInfo->QueueHead->next = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueue));
-			// show_device_all();
-			tmpDCTPtr->QueProInfo->QueueHead->next->pcbid = pid;
-			tmpDCTPtr->QueProInfo->QueueHead->next->next = nullptr;
-			tmpDCTPtr->QueProInfo->QueueEnd = tmpDCTPtr->QueProInfo->QueueHead->next;
-			
-			tmpDCTPtr->QueProInfo->size += 1;
-			tmpDCTPtr->busy += 1;
+		device::DCTItem &item = dcb.get_device_item(deviceID);
+		item.pid_list.push_back(pid);
+		item.busy++;
+		if (item.busy == 0){
 			printf("PID: %d APPLY\n", pid);
 			return 2;		// 进程直接开始使用设备
 		}
-		else if (tmpDCTPtr->busy != 0) {
-
-			tmpDCTPtr->QueProInfo->QueueEnd->next = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueue));
-			tmpDCTPtr->QueProInfo->QueueEnd->next->pcbid = pid;
-			tmpDCTPtr->QueProInfo->QueueEnd->next->next = nullptr;
-			tmpDCTPtr->QueProInfo->QueueEnd = tmpDCTPtr->QueProInfo->QueueEnd->next;
-
-			tmpDCTPtr->QueProInfo->size += 1;
-			tmpDCTPtr->busy += 1;
+		else if (item.busy != 0) {
 			printf("PID: %d ADD\n", pid);
 			return 1;		// 进程加入等待队列
 		}
-		else {
-			return 0;		// 理论不会进入这个else
-		}
 	}
+	return 0;
 }
 
-int release_device(int pid, int deviceID) {
-	int index = get_index_by_deviceID(deviceID);
-	DCTItem* tmpDCTPtr;
-
-	if (index == -1) {
+int device::release_device(int pid, int deviceID) {
+	if (dcb.have_device(deviceID) == 0) {
 		printf("UNKNOW DEVICE : %d\n", deviceID);
 		return 0;
 	}
 	else {
-		tmpDCTPtr = &(DCTPtr->DCTitem[index]);
-		if (tmpDCTPtr->busy != 0 && tmpDCTPtr->QueProInfo->QueueHead->next->pcbid == pid) {
-			
+		device::DCTItem &item = dcb.get_device_item(deviceID);
+		if (item.busy != 0 && *(item.pid_list.begin()) == pid) {	
 			// 进程移出队列
-			tmpDCTPtr->QueProInfo->QueueHead->next = tmpDCTPtr->QueProInfo->QueueHead->next->next;
-			tmpDCTPtr->QueProInfo->size -= 1;
+			item.pid_list.pop_front();
+			item.busy--;
 			printf("PID: %d RELEASE\n", pid);
 			// 进程释放后设备空闲
-			if (tmpDCTPtr->QueProInfo->QueueHead->next == nullptr) {
-				tmpDCTPtr->QueProInfo->QueueEnd = tmpDCTPtr->QueProInfo->QueueHead;
-				tmpDCTPtr->busy -= 1;
+			if (item.busy == 0) {
+				printf("deviceID %d free\n", deviceID);
 			}
 			// 进程释放后等待队列下一进程开始占用设备
 			else {
-				tmpDCTPtr->busy -= 1;
-				printf("PID: %d APPLY\n", tmpDCTPtr->QueProInfo->QueueHead->next->pcbid);
+				printf("PID: %d APPLY\n", *(item.pid_list.begin()));
 			}
-			
 			return 1;
 		}
 		else {
@@ -142,79 +96,86 @@ int release_device(int pid, int deviceID) {
 	printf("access\n");
 }
 
-void show_device(int deviceID){
+void device::show_device(int deviceID){
 	// printf("show device: %d", deviceID);
-	int index = get_index_by_deviceID(deviceID);
-	if (index == -1) {
+	if (dcb.have_device(deviceID) == 0) {
 		printf("UNKNOW DEVICE : %d\n", deviceID);
-	}
-
-	DCTItem * tmpDCTItemPtr = &(DCTPtr->DCTitem[index]);
-	PCBPtrQueue * tmpPCBPtr = (PCBPtrQueue*)malloc(sizeof(PCBPtrQueueptr));
-
-	printf("deviceID: \t%d\n", deviceID);
-
-	printf("status: \t");
-	if (tmpDCTItemPtr->busy == 0){
-		printf("free\n");
 	}else{
-		printf("busy\n");
-	}
+		DCTItem item = dcb.get_device_item(deviceID);
 
-	printf("device Queue: \t");
-	tmpPCBPtr = tmpDCTItemPtr->QueProInfo->QueueHead;
-	for (int i = 0; i < tmpDCTItemPtr->busy; i++){
-		tmpPCBPtr = tmpPCBPtr->next;
-		printf("%d->", tmpPCBPtr->pcbid);
+		printf("deviceID: \t%d\n", deviceID);
+
+		printf("status: \t");
+		if (item.busy == 0){
+			printf("free\n");
+		}else{
+			printf("busy\n");
+		}
+
+		printf("device Queue: \t");
+		for (auto pid_item = item.pid_list.begin(); pid_item != item.pid_list.end(); pid_item++){
+			printf("%d->", (*pid_item));
+		}
+		printf("NULL\n");
 	}
-	printf("NULL\n");
-	// }
 }
 
-void show_device_all(){
-	for (int i = 0; i < MAX_DCT_LEN; i++){
-		show_device(DCTPtr->DCTitem[i].deviceID);
+void device::show_device_all(){
+	for (auto dct_item = dcb.dct.begin(); dct_item != dcb.dct.end(); dct_item++){
+		printf("deviceID: \t%d\n", (*dct_item).deviceID);
+
+		printf("status: \t");
+		if ((*dct_item).busy == 0){
+			printf("free\n");
+		}else{
+			printf("busy\n");
+		}
+
+		printf("device Queue: \t");
+		for (auto pid_item = (*dct_item).pid_list.begin(); pid_item != (*dct_item).pid_list.end(); pid_item++){
+			printf("%d->", (*pid_item));
+		}
+		printf("NULL\n");
 	}
 }
 
-void test_init(){
-	init_device();
+void device::test_init(){
+	device test;
+	test.init_device();
+
+
+	test.apply_device(6, 3);
+    test.apply_device(7, 2);
+    test.apply_device(8, 4);
+    test.apply_device(9, 1);
+    test.apply_device(10, 1);
     // show_device_all();
 
-    apply_device(5, 1);
-    apply_device(6, 3);
-    apply_device(7, 2);
-    apply_device(8, 4);
-    apply_device(9, 1);
-    apply_device(10, 1);
+    test.apply_device(1, 1);
     // show_device_all();
 
-    apply_device(1, 1);
+    test.apply_device(2, 1);
     // show_device_all();
 
-    apply_device(2, 1);
+    test.apply_device(3, 2);
     // show_device_all();
 
-    apply_device(3, 2);
-    // show_device_all();
-
-    apply_device(4, 3);
-    show_device_all();
+    test.apply_device(4, 3);
+    test.show_device_all();
     printf("-------------------\n");
 
-    release_device(5, 1);
+    test.release_device(5, 1);
     // show_device_all();
 
-    release_device(7, 2);
+   	test.release_device(7, 2);
     // show_device_all();
 
-    release_device(4, 2);
+    test.release_device(4, 2);
     // show_device_all();
 
-    release_device(9, 1);
+    test.release_device(9, 1);
     // show_device_all();
 
-    release_device(6, 3);
-	release_device(8, 4);
-    show_device_all();
+    test.release_device(6, 3);
+    test.show_device_all();
 }
