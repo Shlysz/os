@@ -1,7 +1,5 @@
 #include "interupt.h"
 
-#include "glob.h"
-
 mutex mu;  // 中断队列互斥锁
 
 queue<Interupt> interupt_queue;  // 中断队列
