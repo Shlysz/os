@@ -263,6 +263,8 @@ void Process::displayProc() { // 观察进程信息
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
     runPCB->PC = 0;
     Interupt tmp_interupt;
+    File* temfile = nullptr;
+    char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
     bool intertemp = true; // 判断是否申请释放设备中断
     while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
         switch (runPCB->cmdVector[(runPCB->PC)].num)
@@ -292,16 +294,18 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             intertemp = false;
             cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
+        case READ:
+            FileMethod::readByte(runPCB->cmdVector[(runPCB->PC)].name);
+            break;
+        case WRITE:
+            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,0);           
+            strcpy(content, runPCB->cmdVector[(runPCB->PC)].code.c_str());            
+            fs->write(temfile,content,runPCB->cmdVector[(runPCB->PC)].code.length());           
+            fs->close(temfile);
+            delete[] content;
+            break;
         case DEBUG:
-            // cout << "This is a test proc!" << endl;
-            // File*file = fs->open("filename",0);
-            // string a="1`11";
-            // int length=a.length();
-            // char*content=new char[length];
-            // content="";
-            // fs->write(file,content,length);
-            // FileMethod::readByte("");
-            // fs->close(file);
+            cout << "This is a test proc!" << endl;
             break;
         default:
             cout << "Instruction error" << endl;

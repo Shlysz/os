@@ -33,7 +33,9 @@ typedef int PSTATE;      // 线程状态
 #define DELEFILE       1 // 删除文件
 #define APPLY          2 // 申请设备
 #define REALESR        3 // 释放设备
-#define DEBUG          4 // 测试
+#define READ           4 // 写文件
+#define WRITE          5 // 读文件
+#define DEBUG          6 // 测试
 
 
 struct CentralProcessingUnit { // 处理器
@@ -57,6 +59,7 @@ typedef struct cmd {//指令格式
 	int num;//指令对应的编码
 	int num2;//需要唤醒或阻塞的进程PID，文件size或申请的设备代码
 	string name;//创建或删除文件的名字
+    string code;//写入文件内容
 }cmd;
 
 typedef struct ProgramControlBlock { // PCB表结构
