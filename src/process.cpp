@@ -273,7 +273,7 @@ void Process::run(PCB *runPCB) { // 运行函数
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){
-        cout << "debug info, after r:running process PID:" << runPCB->pid <<"silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
+        cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block
     }else{
         cout << "running process PID:" << runPCB->pid << " running fail" << endl;
