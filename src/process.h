@@ -33,8 +33,8 @@ typedef int PSTATE;      // 线程状态
 #define DELEFILE       1 // 删除文件
 #define APPLY          2 // 申请设备
 #define REALESR        3 // 释放设备
-#define READ           4 // 写文件
-#define WRITE          5 // 读文件
+#define READ           4 // 读文件
+#define WRITE          5 // 写文件
 #define DEBUG          6 // 测试
 
 

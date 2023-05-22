@@ -153,6 +153,10 @@ int Process::create(string p_name) { //创建进程
         instuction.num2 = atoi(buff.c_str());
         if (instuction.num==0 || instuction.num==1) 
             file >> instuction.name;
+        // if (instuction.num==4){
+        //     file >> instuction.name;
+        //     file >> instuction.code;
+        // }             
         newProcess.pcb.cmdVector.push_back(instuction);
         // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
     }
@@ -165,6 +169,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     Processes.push_back(newProcess);
     ReadyQueue.push_back(newProcess.pcb.pid);
+    // cout << instuction.num <<" "<<instuction.num2<<" "<< instuction.name <<" "<<instuction.code<<endl;
     return 1;
 }
 
