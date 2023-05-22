@@ -76,7 +76,6 @@ int Process::kernel_init() {  // 内核初始化
 }
 
 void Process::scheduler() { // 内核运行函数
-    displayPcb(&Processes[0].pcb);
     //发出中断，请求当前系统时间存入变量
     while (!ReadyQueue.empty()) { 
         if (RunQueue.size() < NPROC)
