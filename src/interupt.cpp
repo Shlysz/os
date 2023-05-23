@@ -71,6 +71,7 @@ void Interupt::disable_device_interupt(int pid, int device_id) {
 
 unsigned int time_cnt = 0;  // 时间片
 
+bool timer_flag = true;
 void Interupt::timer() {
     // 计时开始
     auto start = std::chrono::steady_clock::now();
@@ -78,7 +79,8 @@ void Interupt::timer() {
     // 持续计时3秒
     while (std::chrono::steady_clock::now() - start < std::chrono::seconds(3)) {
         // 继续计时
-        // 可以在这里添加其他操作
+        // 收到结束计时的信号就停止计时器中断
+        if (timer_flag == false) break;
     }
 
     // 计时结束
@@ -90,17 +92,39 @@ void Interupt::timer() {
 }
 
 //  FCFS 处理队列中的中断请求
-int Interupt::handle_interupt() {
+// <PID, return_value>
+/*
+return_value:
+    0: 该进程消耗经过了一个时间片
+    1: 成功停止计时器
+    2: 该进程可以直接使用设备
+    3: 该设备ID不存在，异常中断
+    4: 该设备被占用，进入设备等待队列
+    5: 该进程释放设备的 pid 输入有误，异常中断
+    6: 该进程成功释放设备
+    7: 该进程释放设备的 device_id 输入有误，异常中断
+*/
+
+std::queue<std::pair<int, int> > process_info_queue;
+mutex info_mu;  // 中断处理结果消息队列锁
+void Interupt::handle_interupt() {
     while (!interupt_queue.empty()) {
         auto task = interupt_queue.front();
         interupt_queue.pop();
         if (task.type == 1) {  // 请求时钟
-            cout << "PID 为 " << this->pid << " 的进程开启时钟中断请求" << endl;
+            timer_flag = true;
+            cout << "PID 为 " << this->pid << " 的进程开启时钟中断!" << endl;
             this->timer();
             cout << "进程耗费经过一个时间片!" << endl;
-            return 1;                 // 返回一个时间片信号
+            info_mu.lock();
+            process_info_queue.push({this->pid, 0});  // 经过了一个时间片
+            info_mu.unlock();
         } else if (task.type == 2) {  // 停止时钟
-            cout << "PID 为 " << this->pid << " 的进程结束时钟中断请求" << endl;
+            cout << "PID 为 " << this->pid << " 的进程结束时钟中断!" << endl;
+            info_mu.lock();
+            process_info_queue.push({this->pid, 1});
+            info_mu.unlock();
+            timer_flag = false;
         } else if (task.type == 3) {
             // 请求设备
             /*
@@ -110,6 +134,10 @@ int Interupt::handle_interupt() {
             */
             // int res = apply_device(pid, device_id);
             //  if(res == 2)
+            // info_mu.lock();
+            // process_info_queue.push({this->pid, 0});
+            // info_mu.unlock();
+            // 申请设备中断的处理结果
             cout << "PID 为 " << this->pid << " 的进程申请设备中断请求 "
                  << this->device_id << " 号设备" << endl;
             // return res;
@@ -125,8 +153,6 @@ int Interupt::handle_interupt() {
             // return res;               // 返回给调度
         } else if (task.type == 5) {  // 异常
             int res = this->raise_panic(this->pid, this->panic_type);
-            return res;
         }
     }
-    return 114514;  // ok
 }

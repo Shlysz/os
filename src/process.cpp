@@ -5,6 +5,7 @@
 #include "global.h"
 #include "device.h"
 #include "interupt.h"
+#include "FileMethod.h"
 #include <chrono>
 
 using namespace std;
@@ -76,9 +77,49 @@ int Process::kernel_init() {  // 内核初始化
 }
 
 void Process::scheduler() { // 内核运行函数
-    displayPcb(&Processes[0].pcb);
     //发出中断，请求当前系统时间存入变量
-    while (!ReadyQueue.empty()) { 
+    while (1) { 
+        mutex tmpmu;
+        tmpmu.lock();
+        if (!process_info_queue.empty()) {
+            mutex tmpmu;
+            tmpmu.lock();
+            auto t = process_info_queue.front();
+            process_info_queue.pop();
+            if (t.second==0 || t.second==1) { // 进程时间
+                if (Processes[t.first-2].pcb.time_need == 0)  // 如果进程用的时间够了
+                    terminate(t.first);
+                else {
+                    wait(t.second);
+                    wakeup(t.second);
+                    readyforward();
+                }
+            }
+            else if (t.second == 2) {
+                wakeup(t.second);
+            }
+            else if (t.second == 3) {
+                cout << "Pid:" << t.first << " apply for a wrong device! End this process!" << endl;
+                WaitQueue.erase(WaitQueue.begin()+t.first);
+                DoneQueue.push_back(t.first);
+                // 内存释放
+            }
+            else if (t.second == 5) {
+                cout << "Pid:" << t.first << " don't match the device! End this process!" << endl;
+                WaitQueue.erase(WaitQueue.begin()+t.first);
+                DoneQueue.push_back(t.first);
+                // 内存释放
+            }
+            else if (t.second == 6) {
+                
+            }
+            else if (t.second == 7) {
+
+            }
+            
+        }
+        tmpmu.unlock();
+
         if (RunQueue.size() < NPROC)
             readyforward();
         
@@ -112,6 +153,10 @@ int Process::create(string p_name) { //创建进程
         instuction.num2 = atoi(buff.c_str());
         if (instuction.num==0 || instuction.num==1) 
             file >> instuction.name;
+        // if (instuction.num==4){
+        //     file >> instuction.name;
+        //     file >> instuction.code;
+        // }             
         newProcess.pcb.cmdVector.push_back(instuction);
         // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
     }
@@ -124,6 +169,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     Processes.push_back(newProcess);
     ReadyQueue.push_back(newProcess.pcb.pid);
+    // cout << instuction.num <<" "<<instuction.num2<<" "<< instuction.name <<" "<<instuction.code<<endl;
     return 1;
 }
 
@@ -165,7 +211,7 @@ void Process::wakeup(int id) { // 唤醒进程
     cout << "No." << id << " Process:" << Processes[id-2].pcb.name << " is waken up." << endl;
 }
 
-void Process::terminate(int id) { // 终结进程
+void Process::terminate(int id) { // 从运行进程终结进程
     Processes[id-2].pcb.state == TERMINATED;
     DoneQueue.push_back(id);
     for (int i=0; i<RunQueue.size(); i++) {
@@ -222,6 +268,8 @@ void Process::displayProc() { // 观察进程信息
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
     runPCB->PC = 0;
     Interupt tmp_interupt;
+    File* temfile = nullptr;
+    char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
     bool intertemp = true; // 判断是否申请释放设备中断
     while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
         switch (runPCB->cmdVector[(runPCB->PC)].num)
@@ -251,6 +299,16 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             intertemp = false;
             cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
+        case READ:
+            FileMethod::readByte(runPCB->cmdVector[(runPCB->PC)].name);
+            break;
+        case WRITE:
+            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,0);           
+            strcpy(content, runPCB->cmdVector[(runPCB->PC)].code.c_str());            
+            fs->write(temfile,content,runPCB->cmdVector[(runPCB->PC)].code.length());           
+            fs->close(temfile);
+            delete[] content;
+            break;
         case DEBUG:
             cout << "This is a test proc!" << endl;
             break;
@@ -274,15 +332,18 @@ void Process::run(PCB *runPCB) { // 运行函数
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){
-        cout << "debug info, after r:running process PID:" << runPCB->pid <<"silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
+        cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block
     }else{
         cout << "running process PID:" << runPCB->pid << " running fail" << endl;
     }
-    //TODO:释放内存
+    if (!runPCB->time_need)
+    {//TODO:释放内存
+    }
     tmp_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
     return ;
 }
+
 void Process::displayPcb(PCB *runPCB){
     cout << runPCB->pid <<runPCB->slice_use<<  runPCB->slice_cnt<< runPCB->time_need
     << runPCB->time_need << runPCB->size << runPCB->pagetable_addr <<runPCB->pagetable_pos

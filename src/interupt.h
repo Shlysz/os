@@ -11,6 +11,23 @@
 
 using namespace std;
 
+/*
+中断处理队列结果: <pid, return_value>
+return_value:
+    //时钟
+    0: 该进程消耗经过了一个时间片
+    1: 该进程请求结束时钟中断成功(停止计时器成功，不再计时)
+
+    //设备
+    2: 该进程可以直接使用设备
+    3: 该设备ID不存在，异常中断
+    4: 该设备被占用，进入设备等待队列
+    5: 该进程释放设备的 pid 输入有误，异常中断
+    6: 该进程成功释放设备
+    7: 该进程释放设备的 device_id 输入有误，异常中断
+*/
+extern std::queue<std::pair<int, int> > process_info_queue;
+
 class Interupt {
    public:
     int pid;  // 请求中断的进程 pid
@@ -44,7 +61,7 @@ class Interupt {
 
     // 处理中断; 由执行指令的部分调用
     // 为防止中断过多，这里会处理全部可处理的中断
-    int handle_interupt();
+    void handle_interupt();
 
     //  定时器相关
     void timer();  // 中断发送时间片提醒

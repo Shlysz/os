@@ -4,14 +4,14 @@
 
 #ifndef FILESYSTEM_GLOBAL_H
 #define FILESYSTEM_GLOBAL_H
+#include <queue>
+
 #include "FileSystem.h"
 #include "diskBlock.h"
 #include "memory.h"
 
-
 extern diskBlock *diskblock;
-extern FileSystem*fs;
+extern FileSystem *fs;
 extern MMU *Mmu;
 
-
-#endif //FILESYSTEM_GLOBAL_H
+#endif  // FILESYSTEM_GLOBAL_H
