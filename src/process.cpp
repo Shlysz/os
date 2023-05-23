@@ -375,7 +375,11 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
 }
 
 void Process::run(PCB *runPCB) { // 运行函数
+
+
     //TODO:申请内存
+
+
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){

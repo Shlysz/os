@@ -236,6 +236,9 @@ Pagetable MMU::initPagetable(int pid){
         pt.page_phyaddr[i] = (1+pid) * 64 + i;
         pt.page_num[i] = i;
     }    
+    /*
+    randomly allocate disk address
+    */
     set<int> randomSet;
     while (randomSet.size() < pagetablesize) {
         int randomNumber = rand()/512 * 1024 *1024;
@@ -249,7 +252,6 @@ Pagetable MMU::initPagetable(int pid){
         i++;
     }
     return pt;
-
 }
 
 TLB MMU::initTLB(int pid,Pagetable PT){
@@ -264,7 +266,7 @@ TLB MMU::initTLB(int pid,Pagetable PT){
     memset(tlb.last_used,0,tlbsize);
     for(int i = 0;i < tlbsize;i++){
         tlb.page_num[i] = i;
-        tlb.page_phyaddr[i] = (1+pid) * 64 + i;
+        tlb.page_phyaddr[i] = PT.page_phyaddr[i];
         tlb.diskaddr[i] = PT.diskaddr[i];
     }
     return tlb;
@@ -304,8 +306,8 @@ int findMaxIndex(int array[], int size) {
 
 void MMU::Query_memory(){
     float memo = float(total_memory/(1024.0*1024));
-    std::cout << memo << "MB" << std::endl;    
-    std::cout << "Total memory space is 4MB"<<endl;
+    cout << "Size of free memory is "<< memo << "MB" << endl;    
+    cout << "Total memory space is 4MB"<<endl;
 }  
 
 
