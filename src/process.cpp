@@ -138,7 +138,8 @@ int Process::create(string p_name) { //创建进程
     fstream file;
     file.open(p_name+".txt", ios::in);
     string buff;
-    if (file.is_open()) {
+    if (file.is_open())
+    {
         while (file >> buff) {   // 存好进程的指令栈
             cmd* instuction = new cmd;
             instuction->num = atoi(buff.c_str());
@@ -146,14 +147,13 @@ int Process::create(string p_name) { //创建进程
             instuction->num2 = atoi(buff.c_str());
             if (instuction->num==0 || instuction->num==1) 
                 file >> instuction->name;
+            // if (instuction.num==4){
+            //     file >> instuction.name;
+            //     file >> instuction.code;
+            // }             
             newProcess.pcb.cmdVector.push_back(*instuction);
-            //cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
+            // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
         }
-    
-    newProcess.pcb.size = newProcess.pcb.cmdVector.size() * 100 * 1024; // 每条指令使得进程大小增大100Kb
-    newProcess.pcb.time_need = newProcess.pcb.cmdVector.size(); // 需要的时间单位等于指令的数量 
-    newProcess.pcb.name = p_name;
-    file.close();
     }
     else {
         newProcess.pcb.name = "NULL"; // 不指定内容的进程就是一个死循环进程
@@ -305,6 +305,8 @@ void Process::signal_min() { // 信号量-
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
     runPCB->PC = 0;
     Interupt tmp_interupt;
+    File* temfile = nullptr;
+    char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
     bool intertemp = true; // 判断是否申请释放设备中断
     while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
         switch (runPCB->cmdVector[(runPCB->PC)].num)
@@ -334,16 +336,18 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             intertemp = false;
             cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
+        case READ:
+            FileMethod::readByte(runPCB->cmdVector[(runPCB->PC)].name);
+            break;
+        case WRITE:
+            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,0);           
+            strcpy(content, runPCB->cmdVector[(runPCB->PC)].code.c_str());            
+            fs->write(temfile,content,runPCB->cmdVector[(runPCB->PC)].code.length());           
+            fs->close(temfile);
+            delete[] content;
+            break;
         case DEBUG:
-            // cout << "This is a test proc!" << endl;
-            // File*file = fs->open("filename",0);
-            // string a="1`11";
-            // int length=a.length();
-            // char*content=new char[length];
-            // content="";
-            // fs->write(file,content,length);
-            // FileMethod::readByte("");
-            // fs->close(file);
+            cout << "This is a test proc!" << endl;
             break;
         case BLANK:
             runPCB->PC--;

@@ -81,6 +81,7 @@ int Shell::parse() {
         // TODO:显示剩余的内存大小
         // return memory剩余的大小
         std::cout << "Size of free memory is:" << endl;
+        Mmu->Query_memory();
         return 1;
     } else if (params == "fork") {
         kernel.create("blank");
@@ -96,7 +97,8 @@ int Shell::parse() {
     }
     else if(params == "deviceinfo"){
         // test_init();     // 测试用设备初始化
-        show_device_all();
+        device test;
+        test.show_device_all();
         return 1;
     }
      else {  // 其余未实现的使用默认 Linux 系统 bash 功能
