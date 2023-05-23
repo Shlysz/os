@@ -1,1 +1,1 @@
-6 6 thread 6 6 thread
+4 4
