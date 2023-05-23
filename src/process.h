@@ -115,6 +115,7 @@ public:
     int signal_get();                   // 信号量获取
     void signal_add();                  // 信号量增加
     void signal_min();                  // 信号量减少
+    void display_test();                // 测试函数： 打印pid对应的进程信息
 };
 
 //全局变量

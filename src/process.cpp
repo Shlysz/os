@@ -1,12 +1,12 @@
 #include <stdlib.h>
 #include <fstream>
+#include <chrono>
 #include "process.h"
 #include "memory.h"
 #include "global.h"
 #include "device.h"
 #include "interupt.h"
 #include "FileMethod.h"
-#include <chrono>
 
 using namespace std;
 
@@ -20,7 +20,8 @@ vector<int> WaitQueue;   // 等待队列
 vector<int> DoneQueue;   // 完成队列
 vector<Process> Processes; // 所有的进程对象
 Process kernel;
-mutex signal_mutex;       // 进程信号量锁
+mutex signal_mutex;      // 进程信号量锁
+mutex output_mutex;      // 进程输入输出锁
 
 int Process::CPU_init() {  // CPU初始化
     CPU.eax = 0;
@@ -63,16 +64,15 @@ Process::Process() {  // 基本的构造函数
 
 int Process::kernel_init() {  // 内核初始化
     pcb.name = "kernel";
-    pcb.name = "kernel";
     pcb.slice_use = 99;                  // 内核进程的运行时间是系统启动至今的时间
     pcb.slice_cnt = 0;
     pcb.time_need = 99999 - pcb.slice_use;    
     int ret = 1;              // 1表示正常
     ret = CPU_init();     // 内核首先初始化CPU
-    cout<<"init cpu successfully"<<endl;
+    // cout<<"init cpu successfully"<<endl;
     //MMU();
     Mmu->initMMU();
-    cout<<"init mmu successfully"<<endl;
+    // cout<<"init mmu successfully"<<endl;
     /*
     内存初始化
     中断初始化
@@ -116,15 +116,12 @@ void Process::scheduler() { // 调度运行函数
             }            
         }
 
-        if (RunQueue.size() < NPROC)
+        if (RunQueue.size() < NPROC && !ReadyQueue.empty())
             readyforward();
-        
-        
+        s_num = ReadyQueue.size() + WaitQueue.size() + RunQueue.size();
     }
-    // cout << "kernel end!" << endl;
+    cout << "schedule done!" << endl;
 }
-
-
 
 int Process::create(string p_name) { //创建进程
     if (WaitQueue.size()>MAXQUEUE && ReadyQueue.size()>MAXQUEUE) { // 判断是否有空间创建进程
@@ -158,11 +155,14 @@ int Process::create(string p_name) { //创建进程
             newProcess.pcb.cmdVector.push_back(*instuction);
             // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
         }
+        newProcess.pcb.size = 100 * newProcess.pcb.cmdVector.size() * 1024; // 每条指令100Kb
+        newProcess.pcb.time_need =  newProcess.pcb.cmdVector.size();
+        newProcess.pcb.name = p_name;
     }
     else {
         newProcess.pcb.name = "NULL"; // 不指定内容的进程就是一个死循环进程
         cmd* instuction = new cmd;
-        instuction->num = 5;
+        instuction->num = 8;
         instuction->num2 = 0;
         newProcess.pcb.cmdVector.push_back(*instuction);
     }
@@ -170,6 +170,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.parent = &(this->pcb);
     newProcess.pcb.pid = Userpid++;
     newProcess.pcb.state = READY;
+    //Mmu->lockedalloc(newProcess.pcb.pid);
     Processes.push_back(newProcess);
     if (ReadyQueue.size() < MAXQUEUE) // 如果准备队列有空进入准备队列，否则进入等待队列
         ReadyQueue.push_back(newProcess.pcb.pid);
@@ -193,7 +194,7 @@ void Process::readyforward() { // 准备进程进入工作
 }
 
 void Process::passSlice(int id) {
-    Processes[id-2].pcb.state == READY;
+    Processes[id-2].pcb.state = READY;
     ReadyQueue.push_back(id);
     for (int i=0; i<RunQueue.size(); i++) {
         if (RunQueue[i] == id) {
@@ -201,11 +202,13 @@ void Process::passSlice(int id) {
             break;
         }
     }
-    cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " finishes a slice." << endl;
+    // output_mutex.lock();
+    // cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " finishes a slice." << endl;
+    // output_mutex.unlock();
 }
 
 void Process::wait(int id) { // 中断进程
-    Processes[id-2].pcb.state == SUSPEND;
+    Processes[id-2].pcb.state = SUSPEND;
     WaitQueue.push_back(id);
     for (int i=0; i<RunQueue.size(); i++) {
         if (RunQueue[i] == id) {
@@ -217,7 +220,7 @@ void Process::wait(int id) { // 中断进程
 }
 
 void Process::wakeup(int id) { // 唤醒进程
-    Processes[id-2].pcb.state == READY;
+    Processes[id-2].pcb.state = READY;
     for (int i=0; i<WaitQueue.size(); i++)
         if (WaitQueue[i] == id) {
             ReadyQueue.push_back(i);
@@ -229,7 +232,7 @@ void Process::wakeup(int id) { // 唤醒进程
 }
 
 void Process::terminate(int id) { // 从运行进程终结进程
-    Processes[id-2].pcb.state == TERMINATED;
+    Processes[id-2].pcb.state = TERMINATED;
     DoneQueue.push_back(id);
     for (int i=0; i<RunQueue.size(); i++) {
         if (RunQueue[i] == id) {
@@ -238,8 +241,7 @@ void Process::terminate(int id) { // 从运行进程终结进程
         }
     }
     //内存释放
-    cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " has done." << endl; 
-    cout << "leaving read proc:" << ReadyQueue.size() << ", run proc:" << RunQueue.size() << endl;
+    cout << "Pid:" << id << " (name:" << Processes[id-2].pcb.name << ") has done, state:" << Processes[id-2].pcb.state; 
 }
 
 void Process::displayProc() { // 观察进程信息
@@ -275,10 +277,6 @@ void Process::displayProc() { // 观察进程信息
         cout << "%\t" << s << "\t" << d << "\t"<< e.pcb.name << endl; 
     }
     cout << "CPU\tUsingthreads:" << RunQueue.size()+2 << "/" << NPROC+2 << endl;
-    //debug
-    cout << "debug info:\nrunqueue:" << RunQueue.size() << endl;
-    cout << "waitqueue:" << WaitQueue.size() << endl;
-    cout << "readyqueue:" << ReadyQueue.size() << endl;
     return;
 }
 
@@ -307,7 +305,7 @@ void Process::signal_min() { // 信号量-
 }
 
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
-    runPCB->PC = 0;
+    //runPCB->PC = 0;
     Interupt tmp_interupt;
     File* temfile = nullptr;
     char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
@@ -354,7 +352,9 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             //TODO:输出进程占用内存信息
             break;
         case DEBUG:
-            cout << "This is a test proc!" << endl;
+            output_mutex.lock();
+            cout << "pid:" << runPCB->pid << ", this is a test proc!" << endl;
+            output_mutex.unlock();
             break;
         case BLANK:
             runPCB->PC--;
@@ -379,10 +379,10 @@ void Process::run(PCB *runPCB) { // 运行函数
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){
-        cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
+        //cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block
     }else{
-        cout << "running process PID:" << runPCB->pid << " running fail" << endl;
+        //cout << "running process PID:" << runPCB->pid << " running fail" << endl;
     }
     if (!runPCB->time_need)
     {//TODO:释放内存
@@ -391,12 +391,25 @@ void Process::run(PCB *runPCB) { // 运行函数
     return ;
 }
 
-void Process::displayPcb(PCB *runPCB){
-    cout << runPCB->pid <<runPCB->slice_use<<  runPCB->slice_cnt<< runPCB->time_need
-    << runPCB->time_need << runPCB->size << runPCB->pagetable_addr <<runPCB->pagetable_pos
-    <<runPCB->pagetable_len<< runPCB->page_write << runPCB->pagein_time<<endl;
+void Process::displayPcb(PCB *runPCB){ // 打印PCB的id和命令
+    // cout << runPCB->pid <<runPCB->slice_use<<  runPCB->slice_cnt<< runPCB->time_need
+    // << runPCB->time_need << runPCB->size << runPCB->pagetable_addr <<runPCB->pagetable_pos
+    // <<runPCB->pagetable_len<< runPCB->page_write << runPCB->pagein_time<<endl;
 
-    cout << "cmd0:" << runPCB->cmdVector[(runPCB->PC)].num <<"  "<< runPCB->cmdVector[0].num<<endl;
-    cout << "cmd1:" << runPCB->cmdVector[(runPCB->PC)+1].num <<"  "<< runPCB->cmdVector[1].num<<endl;
-    cout << runPCB;
+    // cout << "cmd0:" << runPCB->cmdVector[(runPCB->PC)].num <<"  "<< runPCB->cmdVector[0].num<<endl;
+    // cout << "cmd1:" << runPCB->cmdVector[(runPCB->PC)+1].num <<"  "<< runPCB->cmdVector[1].num<<endl;
+    // cout << runPCB;
+    cout << "pid:" << runPCB->pid << " name:" << runPCB->name << " state:" << runPCB->state << " PC:" << runPCB->PC << " cmd:" << endl;
+    for (auto e : runPCB->cmdVector) 
+        cout << e.num << e.num2 << endl;
+    
+}
+
+void Process::display_test() { // 打印所有进程信息
+    cout << "All proc and its cmd:" << endl;
+    for (auto e : Processes) {
+        cout << e.pcb.pid << endl;
+        for (int i=0; i<e.pcb.cmdVector.size(); i++)
+            cout << "\t" << e.pcb.cmdVector[i].num << " " << e.pcb.cmdVector[i].num2 << endl;
+    }
 }
