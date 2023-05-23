@@ -68,7 +68,11 @@ int Process::kernel_init() {  // 内核初始化
     pcb.slice_cnt = 0;
     pcb.time_need = 99999 - pcb.slice_use;    
     int ret = 1;              // 1表示正常
-    ret = CPU_init();         // 内核首先初始化CPU
+    ret = CPU_init();     // 内核首先初始化CPU
+    cout<<"init cpu successfully"<<endl;
+    //MMU();
+    Mmu->initMMU();
+    cout<<"init mmu successfully"<<endl;
     /*
     内存初始化
     中断初始化
@@ -345,6 +349,9 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             fs->write(temfile,content,runPCB->cmdVector[(runPCB->PC)].code.length());           
             fs->close(temfile);
             delete[] content;
+            break;
+        case MEMORY:
+            //TODO:输出进程占用内存信息
             break;
         case DEBUG:
             cout << "This is a test proc!" << endl;

@@ -1,7 +1,11 @@
 #pragma once
 #include <cstring>
 #include <iostream>
-//#include "process.h"
+#include <cstdlib>
+#include <cstdint>
+#include <set>
+#include <mutex>
+using namespace std;
 /*
 unsigned int ---> virtual address,physical address 32bits,
 while the page/frame number is 20 bits and the offset is 12 bits
@@ -14,10 +18,10 @@ for each process ,init a pagetable and a TLB,and when a process is terminated, r
 #define tlbsize 8 // 8B
 #define pagetablesize 64 // 64B a pagetable has 64 pageitem
 #define memory_size 4 * 1024 * 1024 //1 = 1B ,total:4MB 
-#define pagesize = 4 * 1024
-#define framesize = 4 * 1024
+#define pagesize  4 * 1024
+#define framesize  4 * 1024
 
-typedef  unsigned char BYTES;
+//typedef  unsigned char BYTES;
 /*
 pagetable_id = pid
 using Paging-request 
@@ -27,12 +31,11 @@ when the process is terminated, release it
 class Pagetable{
     public:
     int pagetable_id;  
+    int * page_num = nullptr;
     int * page_phyaddr = nullptr; //frame address
     int * last_used = nullptr;
-    int * is_inmemory = nullptr;
+    int * diskaddr = nullptr;
     int * is_changed = nullptr;
-    Pagetable initPagetable(int pid);  //Init a pagetable when a process is created
-    void release_pagetable(Pagetable pt);//Release it when the process is terminated
 };
 
 /*
@@ -45,12 +48,11 @@ when the process is terminated, release it
 class TLB{
     public:
     int tlb_id;
+    int * page_num = nullptr;
     int * page_phyaddr = nullptr; //frame 
     int * last_used = nullptr;
-    int * is_inmemory = nullptr;
+    int * diskaddr = nullptr;
     int * is_changed = nullptr;
-    TLB initTLB(int pid);//Init a TLB when a process is created
-    void release_tlb(TLB tlb);//Release it when the process is terminated
 };
 
 /*
@@ -60,36 +62,55 @@ Functions: allocate memory for process,release used memory,transfer vad to pad,r
 
 class MMU{
 
-    private:
-    // Pagetable PT;
-    // TLB TLb;
-
     public:
     int total_frame = 1024;
     int total_memory = memory_size;
     int *framearray = nullptr; //pid in it
+    struct v_address{
+        int pagenum;
+        int offset;
+    };
+    struct p_address{
+        int framenum;
+        int offset;
+    };
+
+
     typedef struct MMUlist{
         int mid; //mid = pid
         Pagetable PT;
         TLB TLb;
         struct MMUlist *next ;
     }Mlist;
-    
-    MMU();
-    //void IO_in_memory();
-    Pagetable initpt(int pid){
-        Pagetable p;
-        return p.initPagetable(pid);
-        }    
-    TLB initlb(int pid){
-        TLB t;
-        return t.initTLB(pid);
-    }    
-    void Memory_allocate(int pid);
-    void Memory_release(int pid);
-    void LRU_replace();
-    void Find_phyaddr(int pid,TLB tlb,Pagetable pt);
-    void Query_memory();
+    Mlist *mlist;
+ 
+    MMU(){
+        total_frame = 1024;
+        total_memory = memory_size;
+        framearray = new int[total_frame];
+        std::memset(framearray, -2, sizeof(framearray));
+        Mlist *mlist = new Mlist;
+        while(!mlist){
+            Mlist *mlist = new Mlist;
+        }
+
+        mlist->next = nullptr;
+
+    };
+
+    Pagetable initPagetable(int pid);
+    TLB initTLB(int pid,Pagetable PT);
+
+    void lockedalloc(int pid);//to process when a process is created
+    void initMMU();
+    void release_pagetable(Pagetable pt);
+    void release_tlb(TLB tlb);
+    void Memory_allocate(int pid);// to process
+    void Memory_release(int pid);// to process
+    //int  MMU::findMaxIndex(int array[], int size);
+    void Find_phyaddr(int pid);//to process
+    void LRU_replace(int pid);//to process
+    void Query_memory();//to shell
     
 };
 

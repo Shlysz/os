@@ -80,7 +80,7 @@ int Shell::parse() {
     } else if (all_params[0] == "mem") {
         // TODO:显示剩余的内存大小
         // return memory剩余的大小
-        std::cout << "Size of free memory is:" << endl;
+        std::cout << "Size of free memory is " ;
         Mmu->Query_memory();
         return 1;
     } else if (params == "fork") {
