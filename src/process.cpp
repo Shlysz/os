@@ -309,6 +309,9 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             fs->close(temfile);
             delete[] content;
             break;
+        case MEMORY:
+            //TODO:输出进程占用内存信息
+            break;
         case DEBUG:
             cout << "This is a test proc!" << endl;
             break;

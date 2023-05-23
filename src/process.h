@@ -35,7 +35,8 @@ typedef int PSTATE;      // 线程状态
 #define REALESR        3 // 释放设备
 #define READ           4 // 读文件
 #define WRITE          5 // 写文件
-#define DEBUG          6 // 测试
+#define MEMORY         6 // 输出进程占用内存信息
+#define DEBUG          7 // 测试
 
 
 struct CentralProcessingUnit { // 处理器
