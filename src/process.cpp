@@ -78,14 +78,16 @@ int Process::kernel_init() {  // 内核初始化
 
 void Process::scheduler() { // 内核运行函数
     //发出中断，请求当前系统时间存入变量
+    cout << ReadyQueue.size() << " processes start schedule:" << endl; 
     while (1) { 
+        cout << "debug info, before lock schedule in schedule\n";
         mutex tmpmu;
         tmpmu.lock();
         if (!process_info_queue.empty()) {
-            mutex tmpmu;
-            tmpmu.lock();
             auto t = process_info_queue.front();
             process_info_queue.pop();
+            tmpmu.unlock();
+            cout << "debug info, after lock in schedule" << endl;
             if (t.second==0 || t.second==1) { // 进程时间
                 if (Processes[t.first-2].pcb.time_need == 0)  // 如果进程用的时间够了
                     terminate(t.first);
@@ -104,21 +106,13 @@ void Process::scheduler() { // 内核运行函数
                 DoneQueue.push_back(t.first);
                 // 内存释放
             }
-            else if (t.second == 5) {
+            else if (t.second==5 || t.second==7) {
                 cout << "Pid:" << t.first << " don't match the device! End this process!" << endl;
                 WaitQueue.erase(WaitQueue.begin()+t.first);
                 DoneQueue.push_back(t.first);
                 // 内存释放
-            }
-            else if (t.second == 6) {
-                
-            }
-            else if (t.second == 7) {
-
-            }
-            
+            }            
         }
-        tmpmu.unlock();
 
         if (RunQueue.size() < NPROC)
             readyforward();
@@ -146,20 +140,31 @@ int Process::create(string p_name) { //创建进程
     fstream file;
     file.open(p_name+".txt", ios::in);
     string buff;
-    cmd instuction;
-    while (file >> buff) {   // 存好进程的指令栈
-        instuction.num = atoi(buff.c_str());
-        file >> buff;
-        instuction.num2 = atoi(buff.c_str());
-        if (instuction.num==0 || instuction.num==1) 
-            file >> instuction.name;
-        newProcess.pcb.cmdVector.push_back(instuction);
-        // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
-    }
-    newProcess.pcb.PC = 0;
+    if (file.is_open()) {
+        while (file >> buff) {   // 存好进程的指令栈
+            cmd* instuction = new cmd;
+            instuction->num = atoi(buff.c_str());
+            file >> buff;
+            instuction->num2 = atoi(buff.c_str());
+            if (instuction->num==0 || instuction->num==1) 
+                file >> instuction->name;
+            newProcess.pcb.cmdVector.push_back(*instuction);
+            //cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
+        }
+    
     newProcess.pcb.size = newProcess.pcb.cmdVector.size() * 100 * 1024; // 每条指令使得进程大小增大100Kb
     newProcess.pcb.time_need = newProcess.pcb.cmdVector.size(); // 需要的时间单位等于指令的数量 
     newProcess.pcb.name = p_name;
+    file.close();
+    }
+    else {
+        newProcess.pcb.name = "NULL"; // 不指定内容的进程就是一个死循环进程
+        cmd* instuction = new cmd;
+        instuction->num = 5;
+        instuction->num2 = 0;
+        newProcess.pcb.cmdVector.push_back(*instuction);
+    }
+    newProcess.pcb.PC = 0;
     newProcess.pcb.parent = &(this->pcb);
     newProcess.pcb.pid = Userpid++;
     newProcess.pcb.state = READY;
@@ -322,6 +327,7 @@ void Process::run(PCB *runPCB) { // 运行函数
     //TODO:申请内存
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
+    displayPcb(&Processes[0].pcb);
     if(runCmd(runPCB)){
         cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block
@@ -340,5 +346,7 @@ void Process::displayPcb(PCB *runPCB){
     << runPCB->time_need << runPCB->size << runPCB->pagetable_addr <<runPCB->pagetable_pos
     <<runPCB->pagetable_len<< runPCB->page_write << runPCB->pagein_time<<endl;
 
-    cout<< runPCB->cmdVector[(runPCB->PC)].num <<"  "<< runPCB->cmdVector[0].num<<endl;
+    cout << "cmd0:" << runPCB->cmdVector[(runPCB->PC)].num <<"  "<< runPCB->cmdVector[0].num<<endl;
+    cout << "cmd1:" << runPCB->cmdVector[(runPCB->PC)+1].num <<"  "<< runPCB->cmdVector[1].num<<endl;
+    cout << runPCB;
 }
