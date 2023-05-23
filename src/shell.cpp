@@ -81,6 +81,7 @@ int Shell::parse() {
         // TODO:显示剩余的内存大小
         // return memory剩余的大小
         std::cout << "Size of free memory is:" << endl;
+        Mmu->Query_memory();
         return 1;
     } else if (params == "fork") {
         kernel.create("blank");
