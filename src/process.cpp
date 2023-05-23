@@ -18,9 +18,9 @@ vector<int> RunQueue;    // 运行队列
 vector<int> ReadyQueue;  // 准备队列
 vector<int> WaitQueue;   // 等待队列
 vector<int> DoneQueue;   // 完成队列
-
 vector<Process> Processes; // 所有的进程对象
 Process kernel;
+mutex signal_mutex;       // 进程信号量锁
 
 int Process::CPU_init() {  // CPU初始化
     CPU.eax = 0;
@@ -76,37 +76,35 @@ int Process::kernel_init() {  // 内核初始化
     return ret;
 }
 
-void Process::scheduler() { // 内核运行函数
+void Process::scheduler() { // 调度运行函数
     //发出中断，请求当前系统时间存入变量
-    cout << ReadyQueue.size() << " processes start schedule:" << endl; 
-    while (1) { 
-        cout << "debug info, before lock schedule in schedule\n";
+    int s_num = ReadyQueue.size() + WaitQueue.size() + RunQueue.size();
+    cout << s_num << " processes start schedule:" << endl; 
+    while (s_num) { 
         mutex tmpmu;
         tmpmu.lock();
         if (!process_info_queue.empty()) {
             auto t = process_info_queue.front();
             process_info_queue.pop();
             tmpmu.unlock();
-            cout << "debug info, after lock in schedule" << endl;
             if (t.second==0 || t.second==1) { // 进程时间
                 if (Processes[t.first-2].pcb.time_need == 0)  // 如果进程用的时间够了
                     terminate(t.first);
                 else {
-                    wait(t.second);
-                    wakeup(t.second);
+                    passSlice(t.first);
                     readyforward();
                 }
             }
-            else if (t.second == 2) {
-                wakeup(t.second);
+            else if (t.second == 2) { // 进程请求设备成功
+                wakeup(t.first);
             }
-            else if (t.second == 3) {
+            else if (t.second == 3) { // 设备请求异常：设备ID不存在
                 cout << "Pid:" << t.first << " apply for a wrong device! End this process!" << endl;
                 WaitQueue.erase(WaitQueue.begin()+t.first);
                 DoneQueue.push_back(t.first);
                 // 内存释放
             }
-            else if (t.second==5 || t.second==7) {
+            else if (t.second==5 || t.second==7) { // 设备请求异常：设备ID和进程PID不匹配
                 cout << "Pid:" << t.first << " don't match the device! End this process!" << endl;
                 WaitQueue.erase(WaitQueue.begin()+t.first);
                 DoneQueue.push_back(t.first);
@@ -125,7 +123,7 @@ void Process::scheduler() { // 内核运行函数
 
 
 int Process::create(string p_name) { //创建进程
-    if (WaitQueue.size() > MAXQUEUE) { // 判断是否有空间创建进程
+    if (WaitQueue.size()>MAXQUEUE && ReadyQueue.size()>MAXQUEUE) { // 判断是否有空间创建进程
         cout << "Without enough space to create new thread!" << endl;
         this->pcb.p_date->ebx++; // kernel的ebx记录创建失败的进程
         return 0; // 返回0创建进程失败
@@ -169,7 +167,10 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.pid = Userpid++;
     newProcess.pcb.state = READY;
     Processes.push_back(newProcess);
-    ReadyQueue.push_back(newProcess.pcb.pid);
+    if (ReadyQueue.size() < MAXQUEUE) // 如果准备队列有空进入准备队列，否则进入等待队列
+        ReadyQueue.push_back(newProcess.pcb.pid);
+    else 
+        WaitQueue.push_back(newProcess.pcb.pid);
     return 1;
 }
 
@@ -187,6 +188,18 @@ void Process::readyforward() { // 准备进程进入工作
     } 
 }
 
+void Process::passSlice(int id) {
+    Processes[id-2].pcb.state == READY;
+    ReadyQueue.push_back(id);
+    for (int i=0; i<RunQueue.size(); i++) {
+        if (RunQueue[i] == id) {
+            RunQueue.erase(RunQueue.begin()+i);
+            break;
+        }
+    }
+    cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " finishes a slice." << endl;
+}
+
 void Process::wait(int id) { // 中断进程
     Processes[id-2].pcb.state == SUSPEND;
     WaitQueue.push_back(id);
@@ -196,7 +209,7 @@ void Process::wait(int id) { // 中断进程
             break;
         }
     }
-    cout << "No." << id << " Process:" << Processes[id-2].pcb.name << " is interupted." << endl;
+    cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " is interupted." << endl;
 }
 
 void Process::wakeup(int id) { // 唤醒进程
@@ -208,7 +221,7 @@ void Process::wakeup(int id) { // 唤醒进程
             break;
         }
     
-    cout << "No." << id << " Process:" << Processes[id-2].pcb.name << " is waken up." << endl;
+    cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " is waken up." << endl;
 }
 
 void Process::terminate(int id) { // 从运行进程终结进程
@@ -221,8 +234,8 @@ void Process::terminate(int id) { // 从运行进程终结进程
         }
     }
     //内存释放
-
-    cout << "No." << id << " Process:" << Processes[id-2].pcb.name << " has done." << endl; 
+    cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " has done." << endl; 
+    cout << "leaving read proc:" << ReadyQueue.size() << ", run proc:" << RunQueue.size() << endl;
 }
 
 void Process::displayProc() { // 观察进程信息
@@ -263,6 +276,30 @@ void Process::displayProc() { // 观察进程信息
     cout << "waitqueue:" << WaitQueue.size() << endl;
     cout << "readyqueue:" << ReadyQueue.size() << endl;
     return;
+}
+
+int Process::signal_get() { // 获得一个信号量
+    signal_mutex.lock();
+    if (!CPU_flag.using_edx) {
+        unsigned int ret = CPU.edx;
+        signal_mutex.unlock();
+        return ret;
+    }
+    else
+        return -1;
+}
+
+void Process::signal_add() { // 信号量+
+    signal_mutex.lock();
+    CPU.edx++;
+    signal_mutex.unlock();
+}
+
+void Process::signal_min() { // 信号量-
+    signal_mutex.lock();
+    if (!CPU.edx)
+        CPU.edx--;
+    signal_mutex.unlock();
 }
 
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
@@ -308,6 +345,9 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             // FileMethod::readByte("");
             // fs->close(file);
             break;
+        case BLANK:
+            runPCB->PC--;
+            break;
         default:
             cout << "Instruction error" << endl;
             break;
@@ -327,7 +367,6 @@ void Process::run(PCB *runPCB) { // 运行函数
     //TODO:申请内存
     Interupt tmp_interupt;
     tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
-    displayPcb(&Processes[0].pcb);
     if(runCmd(runPCB)){
         cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block

@@ -34,6 +34,7 @@ typedef int PSTATE;      // 线程状态
 #define APPLY          2 // 申请设备
 #define REALESR        3 // 释放设备
 #define DEBUG          4 // 测试
+#define BLANK          5 // 空转
 
 
 struct CentralProcessingUnit { // 处理器
@@ -50,7 +51,7 @@ struct ShareResource { // 共享资源占用标记
     bool using_ebx;
     bool using_ecx;
     bool using_edx;
-    bool is_working;
+    bool is_working; // 没用到返回false，用了返回true
 };
 
 typedef struct cmd {//指令格式
@@ -73,7 +74,7 @@ typedef struct ProgramControlBlock { // PCB表结构
     PSTATE state;       // 进程状态
     PRIORITY priority;  // 优先级
     File *myFile;
-    std::string name;   // 进程名称
+    string name;   // 进程名称
     struct ProgramControlBlock *parent;   // 父进程
     struct CentralProcessingUnit *p_date; // 中断后进程存储此进程的共享资源数据
     int PC;//指令PC指针
@@ -88,6 +89,7 @@ public:
     PCB pcb;                            // PCB表
     vector<int> a;
 
+
     Process();                          // 基本的构造函数
 
     int CPU_init();                     // CPU初始化
@@ -96,14 +98,19 @@ public:
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
     int create(string);                 // 创建线程对象（进入就绪）
     void readyforward();                // 就绪状态进一步运行或者先挂起
-    void run(PCB *runPCB);
-    bool runCmd(PCB *runPCB);           
+    void run(PCB *runPCB);              // 开始运行进程
+    bool runCmd(PCB *runPCB);           // 执行指令
+    void passSlice(int);                // 执行完一个时间片
     void wait(int);                     // 由运行状态进程挂起
     void wakeup(int);                   // 唤醒挂起进程
     void terminate(int);                // 终结进程 
     void displayProc();                 // 展示进程信息
-    void displayPcb(PCB *runPCB);       //打印PCB信息
+    void displayPcb(PCB *runPCB);       // 打印PCB信息
     // void checkProcess(int);          // 观察某个进程信息
+
+    int signal_get();                   // 信号量获取
+    void signal_add();                  // 信号量增加
+    void signal_min();                  // 信号量减少
 };
 
 //全局变量
