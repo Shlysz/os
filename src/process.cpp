@@ -68,7 +68,11 @@ int Process::kernel_init() {  // 内核初始化
     pcb.slice_cnt = 0;
     pcb.time_need = 99999 - pcb.slice_use;    
     int ret = 1;              // 1表示正常
-    ret = CPU_init();         // 内核首先初始化CPU
+    ret = CPU_init();     // 内核首先初始化CPU
+    cout<<"init cpu successfully"<<endl;
+    //MMU();
+    Mmu->initMMU();
+    cout<<"init mmu successfully"<<endl;
     /*
     内存初始化
     中断初始化
