@@ -1,9 +1,10 @@
 #include "shell.h"
-#include "process.h"
-#include "device.h"
+
 #include "FileMethod.h"
 #include "FileSystem.h"
+#include "device.h"
 #include "global.h"
+#include "process.h"
 int Shell::parse() {
     // 获取当前目录
     string currentdir = fs->getcurrent_dirent_location();
@@ -80,13 +81,14 @@ int Shell::parse() {
     } else if (all_params[0] == "mem") {
         // TODO:显示剩余的内存大小
         // return memory剩余的大小
-        
+
         Mmu->Query_memory();
         return 1;
     } else if (params == "fork") {
         kernel.create("blank");
         return 1;
     } else if (all_params[0] == "fork") {  // 创建一个进程
+        for (int pos = 1; pos < all_params.size(); pos++)
         for (int pos = 1; pos < all_params.size(); pos++)
             kernel.create(all_params[pos]);
         kernel.scheduler();
@@ -99,7 +101,7 @@ int Shell::parse() {
         device test;
         test.show_device_all();
         return 1;
-    } else {  // 其余未实现的使用默认 Linux 系统 bash 功能
+    }  else {  // 其余未实现的使用默认 Linux 系统 bash 功能
         system(params.c_str());
         return 1;
     }

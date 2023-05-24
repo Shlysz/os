@@ -182,7 +182,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.pid = Userpid++;
     newProcess.pcb.state = READY;
     //分配一块内存
-    
+
     Mmu->lockedalloc(newProcess.pcb.pid);
     
 
@@ -264,8 +264,10 @@ void Process::terminate(int id) { // 从运行进程终结进程
         }
     }
     //内存释放
-    //Mmu->Memory_release(id);
-
+    // cout << "release"<<endl;
+    Mmu->Memory_release(id);
+    // //Mmu->Report_realtime();
+    // cout << "released"<<endl;
     output_mutex.lock();
     cout << "Pid:" << id << " (name:" << Processes[id-2].pcb.name << ") has done, state:" << Processes[id-2].pcb.state << endl; 
     output_mutex.unlock();
@@ -402,18 +404,17 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
 }
 
 void Process::run(PCB *runPCB) { // 运行函数
-    //TODO:申请内存
+    //Todo : paging
     // Interupt tmp_interupt;
     // tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){
         //cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
-        //TODO:调度（？）schedule:block
     }else{
         //cout << "running process PID:" << runPCB->pid << " running fail" << endl;
     }
-    if (!runPCB->time_need)
-    {//TODO:释放内存
-    }
+    // if (!runPCB->time_need)
+    // {//TODO:释放内存
+    // }
     fst_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
     return ;
 }
