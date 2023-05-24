@@ -116,7 +116,8 @@ void Interupt::handle_interupt() {
             timer_flag = true;
             cout << "PID 为 " << this->pid << " 的进程开启时钟中断!" << endl;
             this->timer();
-            cout << "进程耗费经过一个时间片!" << endl;
+            cout << "PID 为 " << this->pid << " 的进程耗费经过一个时间片!"
+                 << endl;
             info_mu.lock();
             process_info_queue.push({this->pid, 0});  // 经过了一个时间片
             info_mu.unlock();
