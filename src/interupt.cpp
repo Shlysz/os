@@ -122,11 +122,12 @@ void Interupt::handle_interupt() {
             process_info_queue.push({this->pid, 0});  // 经过了一个时间片
             info_mu.unlock();
         } else if (task.type == 2) {  // 停止时钟
-            cout << "PID 为 " << this->pid << " 的进程结束时钟中断!" << endl;
+            timer_flag = false;
+            cout << "PID 为 " << this->pid << " 的进程停止时钟中断!" << endl;
+            // this->disable_time_interupt();
             info_mu.lock();
             process_info_queue.push({this->pid, 1});
             info_mu.unlock();
-            timer_flag = false;
         } else if (task.type == 3) {
             cout << "PID 为 " << this->pid << " 的进程发来请求使用设备ID为 "
                  << this->device_id << " 的中断!" << endl;
