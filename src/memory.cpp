@@ -5,7 +5,7 @@
 
 int oskernel_size = 64 * pagesize;//It means the memory for os code,it cannot be used;
 int shell_size = 64 * pagesize;
-int schedule_size = 64 * pagesize;
+//int schedule_size = 64 * pagesize;
 int mem_available = memory_size;
 int max_process = 14;
 int now_process = 0;
@@ -40,14 +40,14 @@ void MMU::initMMU(){
     //cout<<"apply node successfully";
 
     initkernel->mid = 0;
-    initkernel->PT = initPagetable(-1);
-    initkernel->TLb = initTLB(-1,initkernel->PT);
+    initkernel->PT = initPagetable(0);
+    initkernel->TLb = initTLB(0,initkernel->PT);
     initkernel->next = initshell;
 
     //cout<<"init kernel successfully"<<endl;
     initshell->mid = 1;
-    initshell->PT = initPagetable(0);
-    initshell->TLb = initTLB(0,initshell->PT);
+    initshell->PT = initPagetable(1);
+    initshell->TLb = initTLB(1,initshell->PT);
     initshell->next = nullptr;
 
     //cout<<"init shell successfully"<<endl;
@@ -69,7 +69,7 @@ void MMU::initMMU(){
     //std::memset(framearray+128, 1, sizeof(framearray)/16);
 
     //cout<<"mmu inited"<<endl;
-    mem_available -= oskernel_size - shell_size - schedule_size;
+    mem_available -= oskernel_size - shell_size ;
     free(initkernel);
     free(initshell);
     //free(initschedule);
@@ -79,18 +79,22 @@ void MMU::initMMU(){
 
 void MMU::Memory_allocate(int pid){ 
 
-    while(Mmu->mlist->next!=nullptr){
-        if(Mmu->mlist->mid = -1){
-            break;
-        }
-        Mmu->mlist = Mmu->mlist->next;
+    cout << pid << endl;
+    Mlist *newmmu = new Mlist;
+    while(!newmmu){
+            Mlist *mewmmu = new Mlist;
     }
-    Mlist *newmmu;
     newmmu->mid = pid;
     newmmu->PT = initPagetable(pid);
     newmmu->TLb = initTLB(pid,newmmu->PT); 
     newmmu->next = nullptr;
-
+    while(Mmu->mlist->next !=nullptr){
+        if(Mmu->mlist->mid =-1){
+            break;
+        }
+        Mmu->mlist = Mmu->mlist->next;
+    }
+    cout << "new node successful"<<endl;
     Mmu->mlist->next = newmmu;
     for(int i = pid * 64;i <=pid * 64 + 64;i++ ){
         Mmu->framearray[i] = pid;
@@ -99,16 +103,16 @@ void MMU::Memory_allocate(int pid){
     Mmu-> total_frame -= 64;
     Mmu-> total_memory -= 64 * 4 * 1024;
     mem_available -= 64 * 4 * 1024;
-    
+    cout <<"alloc"<<endl;
     if(mem_available < 1){
         std::cout << "Error:No Enough Memory!" << std::endl;
     }
+    free(newmmu);
 
 }
 
 void MMU::lockedalloc(int pid){
       lock_guard<mutex> lock(allocamtx);
-      
       Memory_allocate(pid);
 
 }
@@ -305,10 +309,16 @@ int findMaxIndex(int array[], int size) {
 
 
 void MMU::Query_memory(){
+
     float memo = float(total_memory/(1024.0*1024));
     cout << "Size of free memory is "<< memo << "MB" << endl;    
     cout << "Total memory space is 4MB"<<endl;
 }  
 
+void MMU::Report_realtime(int pid){
+
+    
+
+}
 
 

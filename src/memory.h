@@ -93,9 +93,7 @@ class MMU{
         while(!mlist){
             Mlist *mlist = new Mlist;
         }
-
         mlist->next = nullptr;
-
     };
 
     Pagetable initPagetable(int pid);
@@ -111,6 +109,7 @@ class MMU{
     void Find_phyaddr(int pid);//to process
     void LRU_replace(int pid);//to process
     void Query_memory();//to shell
+    void Report_realtime(int pid);
     
 };
 
