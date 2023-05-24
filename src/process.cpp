@@ -22,6 +22,8 @@ vector<Process> Processes; // 所有的进程对象
 Process kernel;
 mutex signal_mutex;      // 进程信号量锁
 mutex output_mutex;      // 进程输入输出锁
+Interupt fst_interupt;   // 进程一计时器
+Interupt sec_interupt;   // 进程二计时器
 
 int Process::CPU_init() {  // CPU初始化
     CPU.eax = 0;
@@ -183,13 +185,21 @@ void Process::readyforward() { // 准备进程进入工作
     Processes[ReadyQueue[0]].pcb.state = RUN;
     RunQueue.push_back(ReadyQueue[0]);
     ReadyQueue.erase(ReadyQueue.begin());
+    int *a = new int;
+    // 每个进程开始 run 线程后再开始计时线程
     if (RunQueue.size() == 1) {
+        *a = Processes[RunQueue.front()-2].pcb.pid;
         thread sub_proc1(&Process::run, kernel, &Processes[RunQueue.front()-2].pcb); 
         sub_proc1.detach();
+        thread sub1_time_set(&Process::setTimer1, kernel, a);
+        sub1_time_set.detach();
     }
     else if (RunQueue.size() == 2) {
+        *a = Processes[RunQueue.back()-2].pcb.pid;
         thread sub_proc0(&Process::run, kernel, &Processes[RunQueue.back()-2].pcb);
         sub_proc0.detach();
+        thread sub2_time_set(&Process::setTimer2, kernel, a);
+        sub2_time_set.detach();
     } 
 }
 
@@ -241,7 +251,9 @@ void Process::terminate(int id) { // 从运行进程终结进程
         }
     }
     //内存释放
+    output_mutex.lock();
     cout << "Pid:" << id << " (name:" << Processes[id-2].pcb.name << ") has done, state:" << Processes[id-2].pcb.state; 
+    output_mutex.unlock();
 }
 
 void Process::displayProc() { // 观察进程信息
@@ -375,13 +387,9 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
 }
 
 void Process::run(PCB *runPCB) { // 运行函数
-
-
     //TODO:申请内存
-
-
-    Interupt tmp_interupt;
-    tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
+    // Interupt tmp_interupt;
+    // tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){
         //cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
         //TODO:调度（？）schedule:block
@@ -391,8 +399,16 @@ void Process::run(PCB *runPCB) { // 运行函数
     if (!runPCB->time_need)
     {//TODO:释放内存
     }
-    tmp_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
+    fst_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
     return ;
+}
+
+void Process::setTimer1(int* id) { // 发起计时信号
+    fst_interupt.raise_time_interupt(*id);
+}
+
+void Process::setTimer2(int* id) {
+    sec_interupt.raise_time_interupt(*id);
 }
 
 void Process::displayPcb(PCB *runPCB){ // 打印PCB的id和命令

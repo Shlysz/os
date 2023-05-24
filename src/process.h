@@ -110,6 +110,8 @@ public:
     void terminate(int);                // 终结进程 
     void displayProc();                 // 展示进程信息
     void displayPcb(PCB *runPCB);       // 打印PCB信息
+    void setTimer1(int*);               // 发起计时信号1
+    void setTimer2(int*);               // 发起计时信号2
     // void checkProcess(int);          // 观察某个进程信息
 
     int signal_get();                   // 信号量获取
