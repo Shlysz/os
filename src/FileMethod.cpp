@@ -15,6 +15,8 @@ bool FileMethod::writeByte(string name) {
     stringstream ss;
     cout<<"please input your data:"<<endl;
     while(getline(cin,buffer)){
+        if(buffer.empty())
+            break;
         ss<<buffer<<endl;
     }
     string input=ss.str();
@@ -43,6 +45,6 @@ if(!fs->read(file,data)) {
         return -1;
     }
     cout<<"your data is:"<<endl;
-    cout<<data<<endl;
+    cout<<data;
     return length;
 }
