@@ -1,9 +1,12 @@
-#include <iostream>
-
+#include "process.h"
 #include "shell.h"
 #include "ui.h"
 
 int main() {
+    int ret = kernel.kernel_init();
+    if (!ret) cout << "kernel init wrong!" << endl;
+    
+
     // system("clear");
     UI menu;
     menu.start_shell();

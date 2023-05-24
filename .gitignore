@@ -5,6 +5,7 @@
 .DS_Store
 CMakeLists.txt
 
+
 # Binary
 os
 
@@ -42,3 +43,6 @@ cmake-build-debug
 *.exe
 *.out
 *.app
+
+test.*
+device_test.*

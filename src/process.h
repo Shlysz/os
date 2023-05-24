@@ -1,8 +1,11 @@
+#pragma once
 #include <stdbool.h>
 #include <mutex>
 #include <thread>
 #include <vector>
 #include <iostream>
+#include <iomanip>
+#include "global.h"
 
 using namespace std;
 
@@ -10,101 +13,120 @@ using namespace std;
 #define NPROC         2  // 最大支持的线程数量
 #define MAXQUEUE     10  // 最大队列数量
 #define NFILE       100  // 最大打开文件数量
-int Userpid = 0;         // 系统分配的pid，作为一个共享变量应该做到同步
+
 
 //进程管理中的宏
 #define TIME_SLICE   200 // 时间片大小
-#define HIGH_PRI       0 // 高优先级
-#define LOW_PRI        1 // 低优先级
 #define MAX_SLICE_CNT 10 // 最大占用的时间片数量
-#define MAX_PROC       5 // 最大可调度的进程数量
+
 
 //定义各种状态代表的数值
 typedef int PRIORITY;
-typedef int PSTATE;      //线程状态
-#define CREATE         0 //创建
-#define READY          1 //就绪
-#define RUN            2 //运行
-#define SUSPEND        3 //阻塞挂起
-#define TERMINATED     4 //死亡结束
+typedef int PSTATE;      // 线程状态
+#define READY          1 // 就绪
+#define RUN            2 // 运行
+#define SUSPEND        3 // 阻塞挂起
+#define TERMINATED     4 // 死亡结束
 
-//处理器
-struct CentralProcessingUnit {
+//指令编码
+#define CREAFILE       0 // 创建文件
+#define DELEFILE       1 // 删除文件
+#define APPLY          2 // 申请设备
+#define REALESR        3 // 释放设备
+#define READ           4 // 读文件
+#define WRITE          5 // 写文件
+#define MEMORY         6 // 输出进程占用内存信息
+#define DEBUG          7 // 测试
+#define BLANK          8 // 空转
+
+
+struct CentralProcessingUnit { // 处理器
     unsigned int eax;
     unsigned int ebx;
     unsigned int ecx;
     unsigned int edx;
-    unsigned int pc;
-    //BYTE *share_addr;//共享内存首地址
-} CPU;
 
-struct ShareResource {
+    //BYTE *share_addr;//共享内存首地址
+};
+
+struct ShareResource { // 共享资源占用标记
     bool using_eax;
     bool using_ebx;
     bool using_ecx;
     bool using_edx;
-} CPU_flag;
+    bool is_working; // 没用到返回false，用了返回true
+};
 
-//PCB表结构
-typedef struct ProgramControlBlock {
+typedef struct cmd {//指令格式
+	int num;//指令对应的编码
+	int num2;//需要唤醒或阻塞的进程PID，文件size或申请的设备代码
+	string name;//创建或删除文件的名字
+    string code;//写入文件内容
+}cmd;
 
+typedef struct ProgramControlBlock { // PCB表结构
     int pid;            // pid
     int slice_use;      // 当前已在时间片中使用的时间
     int slice_cnt;      // 使用过的时间片数量
-    int time_need;      // 预计还需要的时间
+    int time_need;      // 预计还需要的时间单位
     int size;           // 大小
     int pagetable_addr; // 页表首地址
     int pagetable_pos;  // 当前载入内存中使用的页表序号
     int pagetable_len;  // 页表长度
     bool page_write;    // 每页是否可写，true则可写，否则仅可读
     int pagein_time;    // 页面存入内存时间
-    int state;          // 进程状态
-    int priority;       // 优先级
-
-    std::string name;   // 进程名称
+    PSTATE state;       // 进程状态
+    PRIORITY priority;  // 优先级
+    File *myFile;
+    string name;   // 进程名称
     struct ProgramControlBlock *parent;   // 父进程
     struct CentralProcessingUnit *p_date; // 中断后进程存储此进程的共享资源数据
+    int PC;//指令PC指针
+    vector<cmd> cmdVector; // 指令数组
     /*这里应该补充打开文件，用一个结构ofile来保存所有在这个进程打开的文件*/
     /*还得有一个变量指向当前进程的工作目录*/
-} PCB;
+} PCB, *PCBptr;
 
 class Process {
 public:
     //进程需要用的变量以及函数
-    PCB pcb;                  // PCB表    
+    PCB pcb;                            // PCB表
+    vector<int> a;
+
 
     Process();                          // 基本的构造函数
-    
 
-    void runKernel();                   // 内核进程，进制状态转换必须由中断进入到这个函数来处理
-    void run();                         // 进程运行函数
+    int CPU_init();                     // CPU初始化
+    int kernel_init();                  // 内核初始化
+    void scheduler();                   // 内核进程，进制状态转换必须由中断进入到这个函数来处理
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
-    int create(int parent_id);          // 创建线程对象（进入就绪）
-    void wait(Process &proc);           // 由运行状态进程挂起
-    void wakeup(Process &proc);         // 唤醒挂起进程
-    void readyforward(Process &proc);   // 就绪状态进一步运行或者先挂起
-    void terminate(Process &proc);      // 终结进程 
-    //void wirte();                       将数据写回内存
-    //void read();                        读取内存数据
-    //void init();                        内存占用初始化
-    //void free();                        内存资源的释放
-    
+    int create(string);                 // 创建线程对象（进入就绪）
+    void readyforward();                // 就绪状态进一步运行或者先挂起
+    void run(PCB *runPCB);              // 开始运行进程
+    bool runCmd(PCB *runPCB);           // 执行指令
+    void passSlice(int);                // 执行完一个时间片
+    void wait(int);                     // 由运行状态进程挂起
+    void wakeup(int);                   // 唤醒挂起进程
+    void terminate(int);                // 终结进程 
+    void displayProc();                 // 展示进程信息
+    void displayPcb(PCB *runPCB);       // 打印PCB信息
+    void setTimer1(int*);               // 发起计时信号1
+    void setTimer2(int*);               // 发起计时信号2
+    // void checkProcess(int);          // 观察某个进程信息
 
-    //调试用的一些进程函数,主要是方便修改进而调试程序
-    int get_pid() const { return pcb.pid; }
-    int get_priority() const { return pcb.priority; }
-    int get_status() const { return pcb.state; }
-    void set_PCB(int pid, PRIORITY pri, PSTATE sta) {pcb.pid = pid, pcb.priority = pri, pcb.state = sta;}
-    void set_priority(int pri) { pcb.priority = pri; }
-    void set_status(PSTATE sta) { pcb.state = sta; }
-    void suspend() { pcb.state = SUSPEND; }
-    void resume() { pcb.state = READY; }
-    //...
+    int signal_get();                   // 信号量获取
+    void signal_add();                  // 信号量增加
+    void signal_min();                  // 信号量减少
+    void display_test();                // 测试函数： 打印pid对应的进程信息
 };
 
-
-vector<Process> RunQueue;            // 运行队列
-vector<Process> ReadyQueue;          // 准备队列
-vector<Process> WaitQueue;           // 等待队列
-vector<Process> DoneQueue;           // 完成队列
-
+//全局变量
+extern int Userpid;
+extern struct CentralProcessingUnit CPU;
+extern struct ShareResource CPU_flag;
+extern vector<int> RunQueue;            // 运行队列
+extern vector<int> ReadyQueue;          // 准备队列
+extern vector<int> WaitQueue;           // 等待队列
+extern vector<int> DoneQueue;           // 完成队列
+extern Process kernel;
+extern vector<Process> Processes;       // 所有的进程对象
