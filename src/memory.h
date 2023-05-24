@@ -5,7 +5,9 @@
 #include <cstdint>
 #include <set>
 #include <mutex>
+#include <queue>
 using namespace std;
+
 /*
 unsigned int ---> virtual address,physical address 32bits,
 while the page/frame number is 20 bits and the offset is 12 bits
@@ -59,10 +61,27 @@ class TLB{
 MMU: memory manage unit 
 Functions: allocate memory for process,release used memory,transfer vad to pad,return memory that can be used 
 */
+// class Mlist{
+
+//     public:
+//     int mid; //mid = pid
+//     Pagetable PT;
+//     TLB TLb;
+//     struct MMUlist *next ;
+
+// };
+
+typedef struct MMUlist{
+        int mid; //mid = pid
+        Pagetable PT;
+        TLB TLb;
+        struct MMUlist *next ;
+    }Mlist;
 
 class MMU{
-
     public:
+
+    Mlist *mlist;
     int total_frame = 1024;
     int total_memory = memory_size;
     int *framearray = nullptr; //pid in it
@@ -74,42 +93,62 @@ class MMU{
         int framenum;
         int offset;
     };
-
-
-    typedef struct MMUlist{
-        int mid; //mid = pid
-        Pagetable PT;
-        TLB TLb;
-        struct MMUlist *next ;
-    }Mlist;
-    Mlist *mlist;
- 
+    queue<int> MidQueue;
+    // typedef struct MMUlist{
+    //     int mid; //mid = pid
+    //     Pagetable PT;
+    //     TLB TLb;
+    //     struct MMUlist *next ;
+    // }Mlist;
     MMU(){
         total_frame = 1024;
         total_memory = memory_size;
         framearray = new int[total_frame];
+        
         std::memset(framearray, -1, sizeof(framearray));
-        Mlist *mlist = new Mlist;
-        while(!mlist){
-            Mlist *mlist = new Mlist;
-        }
-        mlist->next = nullptr;
+        
+        // mlist = new Mlist();
+        // Mlist *initkernel = new Mlist ();
+        // while(!initkernel)Mlist *initkernel = new Mlist();
+        
+        // Mlist *initshell = new Mlist();
+        // while(!initshell)Mlist *initshell = new Mlist();
+        
+        // initkernel->mid = 0;
+        // initkernel->PT = initPagetable(0);
+        // initkernel->TLb = initTLB(0,initkernel->PT);
+        // initkernel->next = nullptr;
+
+        // initshell->mid = 1;
+        // initshell->PT = initPagetable(1);
+        // initshell->TLb = initTLB(1,initshell->PT);
+        // initshell->next = nullptr;
+        // initkernel->next = mlist;
+        // mlist = initkernel;
+        // initkernel->next = initshell;
+        // //Mlist *neww = Mmu->mlist;
+        total_frame -= 2 * 64;
+        total_memory -= 2 * 64 * 4096;
+        
+        //free(initkernel);
+        //free(initshell);
+        MidQueue.push(0);
+        MidQueue.push(1);
     };
 
     Pagetable initPagetable(int pid);
     TLB initTLB(int pid,Pagetable PT);
-
+    void seeprocess();
     void lockedalloc(int pid);//to process when a process is created
     void initMMU();
     void release_pagetable(Pagetable pt);
     void release_tlb(TLB tlb);
-    void Memory_allocate(int pid);// to process
+    void Memory_allocate(int pid,int &max_process);// to process
     void Memory_release(int pid);// to process
-    //int  MMU::findMaxIndex(int array[], int size);
     void Find_phyaddr(int pid);//to process
     void LRU_replace(int pid);//to process
     void Query_memory();//to shell
-    void Report_realtime(int pid);
+    void Report_realtime();
     
 };
 
