@@ -47,28 +47,32 @@ int device::have_device(int device_id){
 
 int device::apply_device(int pid, int deviceID) {
 	if (dcb.have_device(deviceID) == 0) {
-		printf("UNKNOW DEVICE : %d\n", deviceID);
+		printf("UNKNOW DEVICE : %d \t(设备管理)\n", deviceID);
 		return 0;
 	}
 	else {
-		device::DCTItem &item = dcb.get_device_item(deviceID);
-		item.pid_list.push_back(pid);
-		item.busy++;
+		device::DCTItem &item = dcb.get_device_item(deviceID);	
 		if (item.busy == 0){
-			printf("PID: %d APPLY\n", pid);
+			item.pid_list.push_back(pid);
+			item.busy++;	
+			printf("PID: %d APPLY\t(设备管理)\n", pid);
 			return 2;		// 进程直接开始使用设备
 		}
 		else if (item.busy != 0) {
-			printf("PID: %d ADD\n", pid);
+			item.pid_list.push_back(pid);
+			item.busy++;	
+			printf("%d", item.busy);
+			printf("PID: %d ADD\t(设备管理)\n", pid);
 			return 1;		// 进程加入等待队列
 		}
+	
 	}
 	return 0;
 }
 
 int device::release_device(int pid, int deviceID) {
 	if (dcb.have_device(deviceID) == 0) {
-		printf("UNKNOW DEVICE : %d\n", deviceID);
+		printf("UNKNOW DEVICE : %d\t(设备管理)\n", deviceID);
 		return 0;
 	}
 	else {
@@ -77,23 +81,23 @@ int device::release_device(int pid, int deviceID) {
 			// 进程移出队列
 			item.pid_list.pop_front();
 			item.busy--;
-			printf("PID: %d RELEASE\n", pid);
+			printf("PID: %d RELEASE\t(设备管理)\n", pid);
 			// 进程释放后设备空闲
 			if (item.busy == 0) {
-				printf("deviceID %d free\n", deviceID);
+				printf("deviceID %d free\t(设备管理)\n", deviceID);
 			}
 			// 进程释放后等待队列下一进程开始占用设备
 			else {
-				printf("PID: %d APPLY\n", *(item.pid_list.begin()));
+				printf("PID: %d APPLY\t(设备管理)\n", *(item.pid_list.begin()));
 			}
 			return 1;
 		}
 		else {
-			printf("Wrong PID or process is waiting\n");
+			printf("Wrong PID or process is waiting\t(设备管理)\n");
 			return 2;
 		}
 	}
-	printf("access\n");
+	// printf("access\n");
 }
 
 void device::show_device(int deviceID){
