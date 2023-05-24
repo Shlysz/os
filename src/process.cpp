@@ -354,7 +354,7 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             FileMethod::readByte(runPCB->cmdVector[(runPCB->PC)].name);
             break;
         case WRITE:
-            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,0);           
+            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,1);           
             strcpy(content, runPCB->cmdVector[(runPCB->PC)].code.c_str());            
             fs->write(temfile,content,runPCB->cmdVector[(runPCB->PC)].code.length());           
             fs->close(temfile);
