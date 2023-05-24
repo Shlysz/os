@@ -19,11 +19,12 @@ vector<int> ReadyQueue;  // 准备队列
 vector<int> WaitQueue;   // 等待队列
 vector<int> DoneQueue;   // 完成队列
 vector<Process> Processes; // 所有的进程对象
-Process kernel;
+Process kernel;          // 核心进程对象
 mutex signal_mutex;      // 进程信号量锁
 mutex output_mutex;      // 进程输入输出锁
 Interupt fst_interupt;   // 进程一计时器
 Interupt sec_interupt;   // 进程二计时器
+extern mutex info_mu;
 
 int Process::CPU_init() {  // CPU初始化
     CPU.eax = 0;
@@ -87,12 +88,10 @@ void Process::scheduler() { // 调度运行函数
     int s_num = ReadyQueue.size() + WaitQueue.size() + RunQueue.size();
     cout << s_num << " processes start schedule:" << endl; 
     while (s_num) { 
-        mutex tmpmu;
-        tmpmu.lock();
         if (!process_info_queue.empty()) {
             auto t = process_info_queue.front();
             process_info_queue.pop();
-            tmpmu.unlock();
+            info_mu.unlock();
             if (t.second==0 || t.second==1) { // 进程时间
                 if (Processes[t.first-2].pcb.time_need == 0)  // 如果进程用的时间够了
                     terminate(t.first);
@@ -105,17 +104,29 @@ void Process::scheduler() { // 调度运行函数
                 wakeup(t.first);
             }
             else if (t.second == 3) { // 设备请求异常：设备ID不存在
-                cout << "Pid:" << t.first << " apply for a wrong device! End this process!" << endl;
+                output_mutex.lock();
+                cout << "Kernel: Pid-" << t.first << " apply for a wrong device! End this process!" << endl;
+                output_mutex.unlock();
                 WaitQueue.erase(WaitQueue.begin()+t.first);
                 DoneQueue.push_back(t.first);
                 // 内存释放
             }
+            else if (t.second == 4) { // 进程请求设备正在被占用
+                output_mutex.lock();
+                cout << "Kernel: Pid-" << t.first << " wait for device" << endl;
+                output_mutex.unlock();
+                wait(t.first);
+            }
             else if (t.second==5 || t.second==7) { // 设备请求异常：设备ID和进程PID不匹配
-                cout << "Pid:" << t.first << " don't match the device! End this process!" << endl;
+                output_mutex.lock();
+                cout << "Kernel: Pid-" << t.first << " don't match the device! End this process!" << endl;
+                output_mutex.unlock();
                 WaitQueue.erase(WaitQueue.begin()+t.first);
                 DoneQueue.push_back(t.first);
                 // 内存释放
-            }            
+            }
+
+            //scheduledisplay();   // 可以实现每运行一次中断就打印     
         }
 
         if (RunQueue.size() < NPROC && !ReadyQueue.empty())
@@ -252,7 +263,7 @@ void Process::terminate(int id) { // 从运行进程终结进程
     }
     //内存释放
     output_mutex.lock();
-    cout << "Pid:" << id << " (name:" << Processes[id-2].pcb.name << ") has done, state:" << Processes[id-2].pcb.state; 
+    cout << "Pid:" << id << " (name:" << Processes[id-2].pcb.name << ") has done, state:" << Processes[id-2].pcb.state << endl; 
     output_mutex.unlock();
 }
 
@@ -372,7 +383,7 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             runPCB->PC--;
             break;
         default:
-            cout << "Instruction error" << endl;
+            cout << runPCB->pid << ": Instruction error" << endl;
             break;
         }
         runPCB->PC++;
@@ -407,11 +418,11 @@ void Process::setTimer1(int* id) { // 发起计时信号
     fst_interupt.raise_time_interupt(*id);
 }
 
-void Process::setTimer2(int* id) {
+void Process::setTimer2(int* id) { // 发起计时信号
     sec_interupt.raise_time_interupt(*id);
 }
 
-void Process::displayPcb(PCB *runPCB){ // 打印PCB的id和命令
+void Process::displayPcb(PCB *runPCB){ // 测试函数：打印PCB的id和命令
     // cout << runPCB->pid <<runPCB->slice_use<<  runPCB->slice_cnt<< runPCB->time_need
     // << runPCB->time_need << runPCB->size << runPCB->pagetable_addr <<runPCB->pagetable_pos
     // <<runPCB->pagetable_len<< runPCB->page_write << runPCB->pagein_time<<endl;
@@ -432,4 +443,22 @@ void Process::display_test() { // 打印所有进程信息
         for (int i=0; i<e.pcb.cmdVector.size(); i++)
             cout << "\t" << e.pcb.cmdVector[i].num << " " << e.pcb.cmdVector[i].num2 << endl;
     }
+}
+
+void Process::scheduledisplay() {
+    int needTime = 0;
+    output_mutex.lock();
+    system("cls");
+    cout << "\tPID\tNAME\tTIME\tSLCIE" << endl;
+    for (int i=0; i<Processes.size(); i++) {
+        needTime = Processes[i].pcb.time_need + Processes[i].pcb.slice_use;
+        cout << "\t" << Processes[i].pcb.pid << "\t" << Processes[i].pcb.name << "\t" << needTime << "\t|";
+        for (int j=0; j<Processes[i].pcb.slice_cnt+Processes[i].pcb.slice_use-3; j++)
+            cout << "\033[32;1m=\033[0m";   // 绿色代表是已完成的
+        for (int k=0; k<Processes[i].pcb.slice_use; k++)
+            cout << "\033[33;1m=\033[0m";   // 黄色代表新完成的
+        cout << endl;
+    }
+    output_mutex.unlock();
+    
 }
