@@ -98,7 +98,7 @@ int Shell::parse() {
     else if(params == "deviceinfo"){
         // test_init();     // 测试用设备初始化
         device test;
-        test.test_init();
+        test.show_device_all();
         return 1;
     }
      else {  // 其余未实现的使用默认 Linux 系统 bash 功能
