@@ -172,7 +172,9 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.parent = &(this->pcb);
     newProcess.pcb.pid = Userpid++;
     newProcess.pcb.state = READY;
-    //Mmu->lockedalloc(newProcess.pcb.pid);
+    //分配一块内存
+    Mmu->lockedalloc(newProcess.pcb.pid);
+
     Processes.push_back(newProcess);
     if (ReadyQueue.size() < MAXQUEUE) // 如果准备队列有空进入准备队列，否则进入等待队列
         ReadyQueue.push_back(newProcess.pcb.pid);
@@ -251,6 +253,8 @@ void Process::terminate(int id) { // 从运行进程终结进程
         }
     }
     //内存释放
+    Mmu->Memory_release(id);
+
     output_mutex.lock();
     cout << "Pid:" << id << " (name:" << Processes[id-2].pcb.name << ") has done, state:" << Processes[id-2].pcb.state; 
     output_mutex.unlock();
