@@ -46,8 +46,8 @@ class Interupt {
 
     int panic_type;  // 异常中断类型
 
-    void do_nothing(int pid);            // 默认中断函数
-    int raise_panic(int pid, int type);  // 异常中断
+    void do_nothing(int pid);             // 默认中断函数
+    void raise_panic(int pid, int type);  // 异常中断
 
     // 初始化中断
     void init_interupt();
