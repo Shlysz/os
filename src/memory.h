@@ -88,7 +88,7 @@ class MMU{
         total_frame = 1024;
         total_memory = memory_size;
         framearray = new int[total_frame];
-        std::memset(framearray, -2, sizeof(framearray));
+        std::memset(framearray, -1, sizeof(framearray));
         Mlist *mlist = new Mlist;
         while(!mlist){
             Mlist *mlist = new Mlist;

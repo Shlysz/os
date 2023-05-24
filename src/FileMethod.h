@@ -11,8 +11,6 @@ class FileMethod{
         //静态类
         static bool writeByte(string name);
         static int readByte(string name);
-
-
 };
 
 
