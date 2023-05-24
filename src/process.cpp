@@ -76,6 +76,8 @@ int Process::kernel_init() {  // 内核初始化
     //MMU();
     Mmu->initMMU();
     // cout<<"init mmu successfully"<<endl;
+    device init_dev;
+    init_dev.init_device();
     /*
     内存初始化
     中断初始化
@@ -358,14 +360,14 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             break;
         case APPLY:
             tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
-            intertemp = false;
+            // intertemp = false;
             //TODO:schedule:block
-            cout << "Apply for device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
+            // cout << "Apply for device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
         case REALESR:
             tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
-            intertemp = false;
-            cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
+            // intertemp = false;
+            // cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
         case READ:
             FileMethod::readByte(runPCB->cmdVector[(runPCB->PC)].name);
