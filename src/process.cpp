@@ -189,12 +189,12 @@ int Process::create(string p_name) { //创建进程
             instuction->num = atoi(buff.c_str());
             file >> buff;
             instuction->num2 = atoi(buff.c_str());
-            if (instuction->num==0 || instuction->num==1) 
+            if (instuction->num==0 || instuction->num==1||instuction->num == 4)
                 file >> instuction->name;
-            // if (instuction.num==4){
-            //     file >> instuction.name;
-            //     file >> instuction.code;
-            // }             
+             if (instuction->num==5){
+                 file >> instuction->name;
+                 file >> instuction->code;
+             }
             newProcess.pcb.cmdVector.push_back(*instuction);
             // cout << "debug info, cmd read:" << newProcess.pcb.cmdVector.back().num << newProcess.pcb.cmdVector.back().num2 << endl;
         }

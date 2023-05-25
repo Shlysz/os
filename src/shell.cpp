@@ -38,10 +38,13 @@ int Shell::parse() {
 
     if (params == "help") {  // 输出所有可用的指令帮助信息
         std::cout << "\nCommands Available: \n";
-        std::cout << "1. `ls`   - list all files" << std::endl;
+        std::cout << "1. `ls -dir`   - list all files" << std::endl;
         std::cout << "2. `top`  - show all process" << std::endl;
         std::cout << "3. `mem`  - show size of free memory " << std::endl;
-        std::cout << "4. ..." << std::endl;
+        std::cout << "4. cd dir - change nowdir to your dir " << std::endl;
+        std::cout << "6. `write file` - write a file" << std::endl;
+        std::cout << "7. `cat file` - read a file" << std::endl;
+        std::cout << "5. `fork` - create a process" << std::endl;
         std::cout << "5. `exit` - exit the simulator" << std::endl;
         return 1;
     } else if (all_params[0] == "ls") {  // 列出当前目录下的所有文件
