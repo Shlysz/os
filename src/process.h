@@ -59,7 +59,7 @@ struct ShareResource { // 共享资源占用标记
 
 typedef struct cmd {//指令格式
 	int num;//指令对应的编码
-	int num2;//需要唤醒或阻塞的进程PID，文件size或申请的设备代码
+	int num2;//需要申请的设备代码
 	string name;//创建或删除文件的名字
     string code;//写入文件内容
 }cmd;

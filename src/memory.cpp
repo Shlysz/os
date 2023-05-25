@@ -5,113 +5,270 @@
 
 int oskernel_size = 64 * pagesize;//It means the memory for os code,it cannot be used;
 int shell_size = 64 * pagesize;
-int schedule_size = 64 * pagesize;
 int mem_available = memory_size;
 int max_process = 14;
 int now_process = 0;
 mutex allocamtx;
-//int pagetableitem = 1024;//It means a pagetable has less than 1024 items ,we use array[] to store it 
-//int tlbitem = 32; //It means a TLB has less than 1024 items ,we use array[] to store it
-// to calculate the memory that can be used
-// int tlb_id = 0;
-// int pagetable_id = 0;
-//int disk_size = 512 * 1024 *1024;
 int  findMaxIndex(int array[], int size);
-
+void printQueue(std::queue<int> myQueue);
+void removeprocessFromQueue(std::queue<int>& myQueue, int target);
 
 void MMU::initMMU(){
 
-
+    //cout << Mmu->total_frame<<endl;
     //Mlist *initkernel = new Mlist;
-    Mlist *initkernel = new Mlist;
-    while(!initkernel){
-        Mlist *initkernel = new Mlist;
-    }
-    Mlist *initshell = new Mlist;
-    while(!initshell){
-        Mlist *initshell = new Mlist;
-    }
-    // Mlist *initschedule = new Mlist;
-    // while(!initschedule){
-    //     Mlist *initschedule = new Mlist;
+    // Mlist *initkernel = new Mlist ();
+    // while(!initkernel){
+    //     Mlist *initkernel = new Mlist();
     // }
-    
+    // Mlist *initshell = new Mlist();
+    // while(!initshell){
+    //     Mlist *initshell = new Mlist();
+    // }
+    // initkernel->mid = 0;
+    // initkernel->PT = initPagetable(0);
+    // initkernel->TLb = initTLB(0,initkernel->PT);
+    // initkernel->next = nullptr;
 
-    //cout<<"apply node successfully";
-
-    initkernel->mid = 0;
-    initkernel->PT = initPagetable(-1);
-    initkernel->TLb = initTLB(-1,initkernel->PT);
-    initkernel->next = initshell;
-
-    //cout<<"init kernel successfully"<<endl;
-    initshell->mid = 1;
-    initshell->PT = initPagetable(0);
-    initshell->TLb = initTLB(0,initshell->PT);
-    initshell->next = nullptr;
-
-    //cout<<"init shell successfully"<<endl;
-    // initschedule->mid = 1;
-    // initschedule->PT = initPagetable(1);
-    // initschedule->TLb = initTLB(1,initschedule->PT);
-    // initschedule->next = nullptr;
-
-    //cout<<"init sche successfully"<<endl;
-    //Mmu->framearray = new int[total_frame]
-    Mmu->total_frame -= 2 * 64;
-    Mmu->total_memory -= 2 * 64 * 4096;
-
-    Mmu->mlist = initkernel;
-
-    //std::memset(framearray, -2, sizeof(framearray));
-    std::memset(framearray, 0, sizeof(framearray)/16);
-    std::memset(framearray+64, 1, sizeof(framearray)/16);
-    //std::memset(framearray+128, 1, sizeof(framearray)/16);
-
-    //cout<<"mmu inited"<<endl;
-    mem_available -= oskernel_size - shell_size - schedule_size;
-    free(initkernel);
-    free(initshell);
-    //free(initschedule);
-    //return;
-}
+    // initshell->mid = 1;
+    // initshell->PT = initPagetable(1);
+    // initshell->TLb = initTLB(1,initshell->PT);
+    // initshell->next = nullptr;
 
 
-void MMU::Memory_allocate(int pid){ 
+    // //Mlist *neww = Mmu->mlist;
+    // Mmu->total_frame -= 2 * 64;
+    // Mmu->total_memory -= 2 * 64 * 4096;
+    // initkernel->next = Mmu->mlist;
+    // Mmu->mlist = initkernel;
+    // initkernel->next = initshell;
 
-    while(Mmu->mlist->next!=nullptr){
-        if(Mmu->mlist->mid = -1){
-            break;
-        }
-        Mmu->mlist = Mmu->mlist->next;
-    }
-    Mlist *newmmu;
-    newmmu->mid = pid;
-    newmmu->PT = initPagetable(pid);
-    newmmu->TLb = initTLB(pid,newmmu->PT); 
-    newmmu->next = nullptr;
-
-    Mmu->mlist->next = newmmu;
-    for(int i = pid * 64;i <=pid * 64 + 64;i++ ){
-        Mmu->framearray[i] = pid;
-    }
-    Mmu->mlist->next = newmmu;
-    Mmu-> total_frame -= 64;
-    Mmu-> total_memory -= 64 * 4 * 1024;
-    mem_available -= 64 * 4 * 1024;
-    
-    if(mem_available < 1){
-        std::cout << "Error:No Enough Memory!" << std::endl;
-    }
+    std::memset(Mmu->framearray, 0, 64*sizeof(int));
+    int *ptr = &Mmu->framearray[63];
+    std::memset(ptr, 1, 64*sizeof(int));
+    //free(initkernel);
+    //free(initshell);
+    //free(neww);
 
 }
+void MMU::seeprocess(){
+    cout << "Now the processes in memory are:"<<endl;
+    
+    printQueue(Mmu->MidQueue);
+}
+
+void printQueue(std::queue<int> myQueue) {
+    while (!myQueue.empty()) {
+        int frontElement = myQueue.front();
+        std::cout << frontElement << " ";
+        myQueue.pop();
+    }
+    std::cout << std::endl;
+}
+
 
 void MMU::lockedalloc(int pid){
       lock_guard<mutex> lock(allocamtx);
-      
-      Memory_allocate(pid);
+      Memory_allocate(pid,max_process);
 
 }
+
+void MMU::Memory_allocate(int pid,int &max_process){ 
+
+    if(max_process <= 0){
+        std::cout << "Error:No Enough Memory!" << std::endl;
+        return;
+    }
+    max_process--;
+    Mmu->MidQueue.push(pid);
+    cout << "max processnum is:"<<endl<<max_process<<endl;
+    //std::memset(Mmu->framearray+64*pid, 1, 64*sizeof(int));
+    Mmu->total_frame -= 64;
+    Mmu->total_memory -= 64 * 4 * 1024;
+    mem_available -= 64 * 4 * 1024;
+    int *ptr = &Mmu->framearray[64*pid-1];
+    memset(ptr,pid,64*sizeof(int));
+    cout << "Memory of this process is allocated!"<<endl;
+    seeprocess();
+    // Mlist *newmmu = new Mlist();
+    // while(!newmmu){
+    //         Mlist *mewmmu = new Mlist();
+    // }
+    // newmmu->mid = pid;
+    // newmmu->PT = initPagetable(pid);
+    // newmmu->TLb = initTLB(pid,newmmu->PT); 
+    // newmmu->next = nullptr;
+    // Mlist *addnode = Mmu->mlist;
+    // while(addnode->next!=nullptr){
+    //     if(addnode->mid == -1){
+    //         break;
+    //     }
+    //     cout << addnode->mid <<endl;
+    //     addnode = addnode->next;
+    // }
+    // addnode->next = newmmu;
+    // Mmu->mlist = addnode;
+    // for(int i = pid * 64;i <=pid * 64 + 64;i++ ){
+    //     Mmu->framearray[i] = pid;
+    // }
+    // cout << "max processnum is:"<<endl<<max_process<<endl;
+    // //Mmu->mlist->next = newmmu;
+    
+    // cout << "max processnum is:"<<endl<<max_process<<endl;
+    // //cout << i->mid << endl;
+    // free(newmmu);
+
+}
+
+void MMU::Report_realtime(){
+
+    Mlist *p = Mmu->mlist;
+    while(p!=nullptr){
+        cout << p->mid << endl;
+        p = p->next;
+    }
+
+}
+void MMU::Memory_release(int pid){
+    removeprocessFromQueue(Mmu->MidQueue,pid);
+    int *ptr = &Mmu->framearray[pid*64-1];
+    memset(ptr,-1,64*sizeof(int));
+        
+    cout <<endl << "release memory successfully"<<endl;    
+    Mmu->total_frame += 64;
+    Mmu->total_memory += 64 * 4 * 1024;
+    max_process++;
+    cout << "Memory of this process is released!"<<endl;
+    seeprocess();
+    // while(Mmu->mlist->next!=nullptr)
+    // {
+    //     Mmu->mlist = Mmu->mlist->next;
+    //     cout << Mmu->mlist->mid <<endl;
+    // }
+    
+    // if(Mmu->mlist->mid == pid){
+    //         Mmu->mlist->mid = -1;
+    //         release_pagetable(Mmu->mlist->PT);
+    //         release_tlb(Mmu->mlist->TLb);
+    //         //Mmu->mlist = Mmu->mlist->next;
+    //        // break;
+    //     }
+    //     //Mmu->mlist = Mmu->mlist->next;
+   
+}
+void removeprocessFromQueue(std::queue<int>& myQueue, int target) {
+    std::queue<int> tempQueue;  // 创建一个临时队列
+
+    while (!myQueue.empty()) {
+        int frontElement = myQueue.front();
+        myQueue.pop();
+
+        if (frontElement != target) {
+            tempQueue.push(frontElement);
+        }
+    }
+
+    // 将临时队列中的元素重新放回原队列
+    while (!tempQueue.empty()) {
+        int frontElement = tempQueue.front();
+        tempQueue.pop();
+        myQueue.push(frontElement);
+    }
+}
+
+
+
+
+//init pagetable and TLB
+Pagetable MMU::initPagetable(int pid){
+    Pagetable pt; 
+    pt.pagetable_id = pid;
+    pt.page_num = new int[pagetablesize];
+    pt.page_phyaddr = new int[pagetablesize];
+    pt.is_changed = new int[pagetablesize];
+    pt.diskaddr = new int[pagetablesize];
+    pt.last_used = new int[pagetablesize];
+    memset(pt.is_changed,0,pagetablesize);
+    memset(pt.last_used,0,pagetablesize);
+    for(int i = 0;i < pagetablesize;i++) {
+        pt.page_phyaddr[i] = (1+pid) * 64 + i;
+        pt.page_num[i] = i;
+    }    
+    /*
+    randomly allocate disk address
+    */
+    set<int> randomSet;
+    while (randomSet.size() < pagetablesize) {
+        int randomNumber = rand()/512 * 1024 *1024;
+        if (randomSet.find(randomNumber) == randomSet.end()) {
+            randomSet.insert(randomNumber);
+        }
+    }
+    int i = 0;
+    for (int number : randomSet) {      
+        pt.diskaddr[i] = number ;
+        i++;
+    }
+
+    return pt;
+}
+
+TLB MMU::initTLB(int pid,Pagetable PT){
+    TLB tlb;
+    tlb.tlb_id = pid;
+    tlb.page_num = new int[tlbsize];
+    tlb.page_phyaddr = new int[tlbsize];
+    tlb.is_changed = new int[tlbsize];
+    tlb.diskaddr = new int[tlbsize];
+    tlb.last_used = new int[tlbsize];
+    memset(tlb.is_changed,0,tlbsize);
+    memset(tlb.last_used,0,tlbsize);
+    for(int i = 0;i < tlbsize;i++){
+        tlb.page_num[i] = i;
+        tlb.page_phyaddr[i] = PT.page_phyaddr[i];
+        tlb.diskaddr[i] = PT.diskaddr[i];
+    }
+    return tlb;
+}
+
+void MMU::release_pagetable(Pagetable pt){
+    pt.pagetable_id = -1;
+    delete[] pt.page_num;
+    delete[] pt.page_phyaddr;
+    delete[] pt.is_changed;
+    delete[] pt.diskaddr;
+    delete[] pt.last_used;
+}
+
+void MMU::release_tlb(TLB tlb){
+    tlb.tlb_id = -1;
+    delete[] tlb.page_phyaddr;
+    delete[] tlb.is_changed;
+    delete[] tlb.diskaddr;
+    delete[] tlb.last_used;
+    delete[] tlb.page_num;
+}
+
+int findMaxIndex(int array[], int size) {
+    if (size <= 0) {
+        return -1;
+    }
+    int maxIndex = 0; 
+    for (int i = 1; i < size; i++) {
+        if (array[i] > array[maxIndex]) {
+            maxIndex = i;
+        }
+    }
+    return maxIndex;
+}
+
+
+void MMU::Query_memory(){
+
+    float memo = float(total_memory/(1024.0*1024));
+    cout << "Size of free memory is "<< memo << "MB" << endl;    
+    cout << "Total memory space is 4MB"<<endl;
+}  
 
 void MMU::LRU_replace(int pid){
 
@@ -201,114 +358,6 @@ void MMU::LRU_replace(int pid){
 //     }
 //     free(search);
 // }
-
-
-void MMU::Memory_release(int pid){
-    
-    //Mlist *i = Mmu->mlist;
-    while(Mmu->mlist!=nullptr){
-        if(Mmu->mlist->mid == pid){
-            Mmu->mlist->mid = -1;
-            release_pagetable(Mmu->mlist->PT);
-            release_tlb(Mmu->mlist->TLb);
-            Mmu->mlist->next = Mmu->mlist->next->next;
-            break;
-        }
-        Mmu->mlist = Mmu->mlist->next;
-    }    
-    Mmu->total_frame += 64;
-    Mmu->total_memory += 64 * 4 * 1024;
-    mem_available += 64 * 4 * 1024;
-}
-
-//init pagetable and TLB
-Pagetable MMU::initPagetable(int pid){
-    Pagetable pt; 
-    pt.pagetable_id = pid;
-    pt.page_num = new int[pagetablesize];
-    pt.page_phyaddr = new int[pagetablesize];
-    pt.is_changed = new int[pagetablesize];
-    pt.diskaddr = new int[pagetablesize];
-    pt.last_used = new int[pagetablesize];
-    memset(pt.is_changed,0,pagetablesize);
-    memset(pt.last_used,0,pagetablesize);
-    for(int i = 0;i < pagetablesize;i++) {
-        pt.page_phyaddr[i] = (1+pid) * 64 + i;
-        pt.page_num[i] = i;
-    }    
-    /*
-    randomly allocate disk address
-    */
-    set<int> randomSet;
-    while (randomSet.size() < pagetablesize) {
-        int randomNumber = rand()/512 * 1024 *1024;
-        if (randomSet.find(randomNumber) == randomSet.end()) {
-            randomSet.insert(randomNumber);
-        }
-    }
-    int i = 0;
-    for (int number : randomSet) {      
-        pt.diskaddr[i] = number ;
-        i++;
-    }
-    return pt;
-}
-
-TLB MMU::initTLB(int pid,Pagetable PT){
-    TLB tlb;
-    tlb.tlb_id = pid;
-    tlb.page_num = new int[tlbsize];
-    tlb.page_phyaddr = new int[tlbsize];
-    tlb.is_changed = new int[tlbsize];
-    tlb.diskaddr = new int[tlbsize];
-    tlb.last_used = new int[tlbsize];
-    memset(tlb.is_changed,0,tlbsize);
-    memset(tlb.last_used,0,tlbsize);
-    for(int i = 0;i < tlbsize;i++){
-        tlb.page_num[i] = i;
-        tlb.page_phyaddr[i] = PT.page_phyaddr[i];
-        tlb.diskaddr[i] = PT.diskaddr[i];
-    }
-    return tlb;
-}
-
-void MMU::release_pagetable(Pagetable pt){
-    pt.pagetable_id = -1;
-    delete[] pt.page_num;
-    delete[] pt.page_phyaddr;
-    delete[] pt.is_changed;
-    delete[] pt.diskaddr;
-    delete[] pt.last_used;
-}
-
-void MMU::release_tlb(TLB tlb){
-    tlb.tlb_id = -1;
-    delete[] tlb.page_phyaddr;
-    delete[] tlb.is_changed;
-    delete[] tlb.diskaddr;
-    delete[] tlb.last_used;
-    delete[] tlb.page_num;
-}
-
-int findMaxIndex(int array[], int size) {
-    if (size <= 0) {
-        return -1;
-    }
-    int maxIndex = 0; 
-    for (int i = 1; i < size; i++) {
-        if (array[i] > array[maxIndex]) {
-            maxIndex = i;
-        }
-    }
-    return maxIndex;
-}
-
-
-void MMU::Query_memory(){
-    float memo = float(total_memory/(1024.0*1024));
-    cout << "Size of free memory is "<< memo << "MB" << endl;    
-    cout << "Total memory space is 4MB"<<endl;
-}  
 
 
 

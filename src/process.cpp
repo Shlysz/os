@@ -74,10 +74,8 @@ int Process::kernel_init() {  // 内核初始化
     pcb.time_need = 99999 - pcb.slice_use;    
     int ret = 1;              // 1表示正常
     ret = CPU_init();     // 内核首先初始化CPU
-    // cout<<"init cpu successfully"<<endl;
-    //MMU();
-    Mmu->initMMU();
-    // cout<<"init mmu successfully"<<endl;
+    
+    Mmu->initMMU();//内存初始化
     /*
     内存初始化
     中断初始化
@@ -211,7 +209,11 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.parent = &(this->pcb);
     newProcess.pcb.pid = Userpid++;
     newProcess.pcb.state = READY;
-    //Mmu->lockedalloc(newProcess.pcb.pid);
+    //分配一块内存
+
+    Mmu->lockedalloc(newProcess.pcb.pid);
+    
+
     Processes.push_back(newProcess);
     if (ReadyQueue.size() < MAXQUEUE) // 如果准备队列有空进入准备队列，否则进入等待队列
         ReadyQueue.push_back(newProcess.pcb.pid);
@@ -317,6 +319,10 @@ void Process::terminate(int id) { // 从运行进程终结进程
         }
     }
     //内存释放
+    // cout << "release"<<endl;
+    Mmu->Memory_release(id);
+    // //Mmu->Report_realtime();
+    // cout << "released"<<endl;
     output_mutex.lock();
     cout << "Pid:" << id << " (name:" << Processes[id-2].pcb.name << ") has done, state:" << Processes[id-2].pcb.state << endl; 
     output_mutex.unlock();
@@ -407,20 +413,20 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             break;
         case APPLY:
             tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
-            intertemp = false;
+            //intertemp = false;
             //TODO:schedule:block
-            cout << "Apply for device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
+            //cout << "Apply for device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
         case REALESR:
             tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
-            intertemp = false;
-            cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
+           // intertemp = false;
+            //cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
             break;
         case READ:
             FileMethod::readByte(runPCB->cmdVector[(runPCB->PC)].name);
             break;
         case WRITE:
-            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,0);           
+            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,1);           
             strcpy(content, runPCB->cmdVector[(runPCB->PC)].code.c_str());            
             fs->write(temfile,content,runPCB->cmdVector[(runPCB->PC)].code.length());           
             fs->close(temfile);
@@ -455,29 +461,25 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
 }
 
 void Process::run(PCB *runPCB) { // 运行函数
-    //TODO:申请内存
+    //Todo : paging
     // Interupt tmp_interupt;
     // tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){
         //cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
-        //TODO:调度（？）schedule:block
     }else{
         //cout << "running process PID:" << runPCB->pid << " running fail" << endl;
     }
     if (!runPCB->time_need)
     {//TODO:释放内存
     }
-    if (runPCB->pid == RunQueue[0] && runPCB->slice_use!=0) {
-        output_mutex.lock();
-        cout << "PID" << runPCB->pid << " time1 end send" <<endl;
-        output_mutex.unlock();
+    if (runPCB->pid == t1 && runPCB->slice_use!=0) { // 如果当前进程在t1运行,而且时间片没跑完,t1计时器结束
         fst_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
     }
         
     else if (runPCB->slice_use!=0) {
-        output_mutex.lock();
-        cout << "PID" << runPCB->pid << " time2 end send" <<endl;
-        output_mutex.unlock();
+        // output_mutex.lock();
+        // cout << "PID" << runPCB->pid << " time2 end send" <<endl;
+        // output_mutex.unlock();
         sec_interupt.disable_time_interupt(runPCB->pid);
     }
     return ;

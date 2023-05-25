@@ -5,7 +5,6 @@
 int main() {
     int ret = kernel.kernel_init();
     if (!ret) cout << "kernel init wrong!" << endl;
-    
 
     // system("clear");
     UI menu;

@@ -1,8 +1,8 @@
 #include "shell.h"
 #include "process.h"
-#include "device.h"
 #include "FileMethod.h"
 #include "FileSystem.h"
+#include "device.h"
 #include "global.h"
 
 extern std::queue<std::pair<int, int> > process_info_queue;
@@ -12,7 +12,7 @@ int Shell::parse() {
     std::cout << "\nuser@simulator " << currentdir << " % ";
     std::string params;
     std::getline(std::cin, params);
-
+    if (params.empty()) return 1; // 空字符串直接返回不做处理
     std::vector<std::string> all_params;
     std::string temp;
     for (auto t : params) {
@@ -82,14 +82,15 @@ int Shell::parse() {
     } else if (all_params[0] == "mem") {
         // TODO:显示剩余的内存大小
         // return memory剩余的大小
-        
+
         Mmu->Query_memory();
         return 1;
     } else if (params == "fork") {
         kernel.create("blank");
         return 1;
     } else if (all_params[0] == "fork") {  // 创建一个进程
-        for (int pos=1; pos<all_params.size(); pos++)
+        for (int pos = 1; pos < all_params.size(); pos++)
+        for (int pos = 1; pos < all_params.size(); pos++)
             kernel.create(all_params[pos]);
         kernel.scheduler();
         return 1;
@@ -104,14 +105,12 @@ int Shell::parse() {
     }else if (params == "exit") {  // 退出程序
         /*产生一个特殊的中断信号，保证优先被处理*/
         return 0;
-    }
-    else if(params == "deviceinfo"){
+    }else if(params == "deviceinfo"){
         // test_init();     // 测试用设备初始化
         device test;
         test.show_device_all();
         return 1;
-    }
-     else {  // 其余未实现的使用默认 Linux 系统 bash 功能
+    }  else {  // 其余未实现的使用默认 Linux 系统 bash 功能
         system(params.c_str());
         return 1;
     }
