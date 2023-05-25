@@ -68,6 +68,8 @@ Process::Process() {  // 基本的构造函数
 }
 
 int Process::kernel_init() {  // 内核初始化
+    device inidev;
+    inidev.init_device();
     pcb.name = "kernel";
     pcb.slice_use = 99;                  // 内核进程的运行时间是系统启动至今的时间
     pcb.slice_cnt = 0;
