@@ -81,7 +81,7 @@ void MMU::Memory_allocate(int pid,int &max_process){
     }
     max_process--;
     Mmu->MidQueue.push(pid);
-    cout << "max processnum is:"<<endl<<max_process<<endl;
+    //cout << "max processnum is:"<<endl<<max_process<<endl;
     //std::memset(Mmu->framearray+64*pid, 1, 64*sizeof(int));
     Mmu->total_frame -= 64;
     Mmu->total_memory -= 64 * 4 * 1024;
@@ -134,7 +134,7 @@ void MMU::Memory_release(int pid){
     int *ptr = &Mmu->framearray[pid*64-1];
     memset(ptr,-1,64*sizeof(int));
         
-    cout <<endl << "release memory successfully"<<endl;    
+    //cout <<endl << "release memory successfully"<<endl;    
     Mmu->total_frame += 64;
     Mmu->total_memory += 64 * 4 * 1024;
     max_process++;
