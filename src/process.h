@@ -99,13 +99,16 @@ public:
     int CPU_init();                     // CPU初始化
     int kernel_init();                  // 内核初始化
     void scheduler();                   // 内核进程，进制状态转换必须由中断进入到这个函数来处理
+    void FCFS();                        // 先进先服务
     //用户进程从创建到结束，状态的切换应该都由中断函数，并由父进程对象（内核进程）来调用这些状态切换函数
     int create(string);                 // 创建线程对象（进入就绪）
     void readyforward();                // 就绪状态进一步运行或者先挂起
     void run(PCB *runPCB);              // 开始运行进程
     bool runCmd(PCB *runPCB);           // 执行指令
+    void FCFS_run(PCB *runPCB);         // FCFS的运行函数
     void passSlice(int);                // 执行完一个时间片
     void wait(int);                     // 由运行状态进程挂起
+    void wrong(int);                    // 由等待终止
     void wakeup(int);                   // 唤醒挂起进程
     void terminate(int);                // 终结进程 
     void displayProc();                 // 展示进程信息

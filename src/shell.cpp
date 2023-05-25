@@ -4,6 +4,8 @@
 #include "FileMethod.h"
 #include "FileSystem.h"
 #include "global.h"
+
+extern std::queue<std::pair<int, int> > process_info_queue;
 int Shell::parse() {
     // 获取当前目录
     string currentdir = fs->getcurrent_dirent_location();
@@ -91,7 +93,15 @@ int Shell::parse() {
             kernel.create(all_params[pos]);
         kernel.scheduler();
         return 1;
-    } else if (params == "exit") {  // 退出程序
+    } else if (all_params[0] == "FCFS") {
+        for (int pos=1; pos<all_params.size(); pos++)
+            kernel.create(all_params[pos]);
+        kernel.FCFS();
+        return 1;
+    } else if (params == "wws") {
+        cout << process_info_queue.size();
+        return 1;
+    }else if (params == "exit") {  // 退出程序
         /*产生一个特殊的中断信号，保证优先被处理*/
         return 0;
     }

@@ -88,7 +88,7 @@ void Interupt::timer() {
 
     // 计算耗时并输出结果
     std::chrono::duration<double> elapsed_seconds = end - start;
-    std::cout << "耗时: " << elapsed_seconds.count() << " 秒" << std::endl;
+    //std::cout << "耗时: " << elapsed_seconds.count() << " 秒" << std::endl;
 }
 
 //  FCFS 处理队列中的中断请求
@@ -113,14 +113,14 @@ void Interupt::handle_interupt() {
         interupt_queue.pop();
         if (task.type == 1) {  // 请求时钟
             timer_flag = true;
-            cout << "PID 为 " << this->pid << " 的进程开启时钟中断!" << endl;
+            //cout << "PID 为 " << this->pid << " 的进程开启时钟中断!" << endl;
             this->timer();
-            cout << "进程耗费经过一个时间片!" << endl;
+            //cout << "进程耗费经过一个时间片!" << endl;
             info_mu.lock();
             process_info_queue.push({this->pid, 0});  // 经过了一个时间片
             info_mu.unlock();
         } else if (task.type == 2) {  // 停止时钟
-            cout << "PID 为 " << this->pid << " 的进程结束时钟中断!" << endl;
+            //cout << "PID 为 " << this->pid << " 的进程结束时钟中断!" << endl;
             info_mu.lock();
             process_info_queue.push({this->pid, 1});
             info_mu.unlock();
@@ -155,4 +155,5 @@ void Interupt::handle_interupt() {
             int res = this->raise_panic(this->pid, this->panic_type);
         }
     }
+    return;
 }

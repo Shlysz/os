@@ -11,7 +11,9 @@
 using namespace std;
 
 // 全局变量
-int Userpid = 2;
+int Userpid = 2;         // 分配给进程的pid
+int t1 = 0;
+int t2 = 0;
 struct CentralProcessingUnit CPU;
 struct ShareResource CPU_flag;
 vector<int> RunQueue;    // 运行队列
@@ -83,7 +85,7 @@ int Process::kernel_init() {  // 内核初始化
     return ret;
 }
 
-void Process::scheduler() { // 调度运行函数
+void Process::scheduler() { // RR调度运行函数
     //发出中断，请求当前系统时间存入变量
     int s_num = ReadyQueue.size() + WaitQueue.size() + RunQueue.size();
     cout << s_num << " processes start schedule:" << endl; 
@@ -91,10 +93,11 @@ void Process::scheduler() { // 调度运行函数
         if (!process_info_queue.empty()) {
             auto t = process_info_queue.front();
             process_info_queue.pop();
-            info_mu.unlock();
             if (t.second==0 || t.second==1) { // 进程时间
-                if (Processes[t.first-2].pcb.time_need == 0)  // 如果进程用的时间够了
-                    terminate(t.first);
+                if (Processes[t.first-2].pcb.time_need == 0) {  // 如果进程用的时间够了
+                    //if (Processes[t.first-2].pcb.state == RUN)
+                        terminate(t.first);
+                }
                 else {
                     passSlice(t.first);
                     readyforward();
@@ -134,6 +137,31 @@ void Process::scheduler() { // 调度运行函数
         s_num = ReadyQueue.size() + WaitQueue.size() + RunQueue.size();
     }
     cout << "schedule done!" << endl;
+}
+
+void Process::FCFS() { // FCFS调度函数
+    int to_do = ReadyQueue.size(); // 总共需要调度的进程
+    while (to_do) {
+        if (!process_info_queue.empty()) { // 有中断
+            auto t = process_info_queue.front();
+            process_info_queue.pop();
+            if (t.second == 2) { //可用
+                wakeup(t.first);
+            }
+            else if (t.second==3 || t.second==5 || t.second==7) { // 异常中断
+                wrong (t.first);
+            }
+            else if (t.second == 4) { // 设备进入等待
+                wait(t.first);
+            }
+            to_do = ReadyQueue.size()+WaitQueue.size()+RunQueue.size();
+        }
+        else if (!ReadyQueue.empty()) {
+            RunQueue.push_back(ReadyQueue[0]);
+            ReadyQueue.erase(ReadyQueue.begin());
+            FCFS_run(&Processes[RunQueue[0]].pcb);
+        }
+    }
 }
 
 int Process::create(string p_name) { //创建进程
@@ -193,20 +221,21 @@ int Process::create(string p_name) { //创建进程
 }
 
 void Process::readyforward() { // 准备进程进入工作
-    Processes[ReadyQueue[0]].pcb.state = RUN;
-    RunQueue.push_back(ReadyQueue[0]);
-    ReadyQueue.erase(ReadyQueue.begin());
     int *a = new int;
+    *a = ReadyQueue[0];
+    Processes[*a].pcb.state = RUN;
+    RunQueue.push_back(*a);
+    ReadyQueue.erase(ReadyQueue.begin());
     // 每个进程开始 run 线程后再开始计时线程
-    if (RunQueue.size() == 1) {
-        *a = Processes[RunQueue.front()-2].pcb.pid;
+    if (t1 == 0) {
+        t1 = *a;
         thread sub_proc1(&Process::run, kernel, &Processes[RunQueue.front()-2].pcb); 
         sub_proc1.detach();
         thread sub1_time_set(&Process::setTimer1, kernel, a);
         sub1_time_set.detach();
     }
-    else if (RunQueue.size() == 2) {
-        *a = Processes[RunQueue.back()-2].pcb.pid;
+    else if (t2 == 0) {
+        t2 = *a;
         thread sub_proc0(&Process::run, kernel, &Processes[RunQueue.back()-2].pcb);
         sub_proc0.detach();
         thread sub2_time_set(&Process::setTimer2, kernel, a);
@@ -217,6 +246,10 @@ void Process::readyforward() { // 准备进程进入工作
 void Process::passSlice(int id) {
     Processes[id-2].pcb.state = READY;
     ReadyQueue.push_back(id);
+    if (t1 == id)
+        t1 = 0;
+    else 
+        t2 = 0;
     for (int i=0; i<RunQueue.size(); i++) {
         if (RunQueue[i] == id) {
             RunQueue.erase(RunQueue.begin()+i);
@@ -231,6 +264,10 @@ void Process::passSlice(int id) {
 void Process::wait(int id) { // 中断进程
     Processes[id-2].pcb.state = SUSPEND;
     WaitQueue.push_back(id);
+    if (t1 == id)
+        t1 = 0;
+    else 
+        t2 = 0;
     for (int i=0; i<RunQueue.size(); i++) {
         if (RunQueue[i] == id) {
             RunQueue.erase(RunQueue.begin()+i);
@@ -238,6 +275,20 @@ void Process::wait(int id) { // 中断进程
         }
     }
     cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " is interupted." << endl;
+}
+
+void Process::wrong(int id) { // 从等待终止
+    Processes[id-2].pcb.pid = TERMINATED;
+    DoneQueue.push_back(id);
+    for (int i=0; i<WaitQueue.size(); i++) {
+        if (WaitQueue[i] == id) {
+            WaitQueue.erase(WaitQueue.begin()+i);
+            break;
+        }
+    }
+    output_mutex.lock();
+    cout << "Pid:" << id << " Process:" << Processes[id-2].pcb.name << " wrong and quit." << endl;
+    output_mutex.unlock();
 }
 
 void Process::wakeup(int id) { // 唤醒进程
@@ -255,6 +306,10 @@ void Process::wakeup(int id) { // 唤醒进程
 void Process::terminate(int id) { // 从运行进程终结进程
     Processes[id-2].pcb.state = TERMINATED;
     DoneQueue.push_back(id);
+    if (t1 == id)
+        t1 = 0;
+    else
+        t2 = 0;
     for (int i=0; i<RunQueue.size(); i++) {
         if (RunQueue[i] == id) {
             RunQueue.erase(RunQueue.begin()+i);
@@ -271,12 +326,12 @@ void Process::displayProc() { // 观察进程信息
     // 中断提供的时间打印在第一行***
     // 展示内容：pid 用户 优先级 占用内存百分比 进程状态 进程总时间 进程名字
     cout << "PID\tUSER\tPR\t%MEM\tSTATE\tTIME\tname" << endl;
-    int d = kernel.pcb.time_need + kernel.pcb.slice_use;
+    int d = kernel.pcb.time_need + kernel.pcb.slice_cnt;
     string s;
     cout << "0\troot\t99\t0\trun\t" << 99999 << "\tsystemd" << endl;
     cout << "1\troot\t99\t0\trun\t" << 99999 << "\tshell" << endl;
     for (auto e : Processes) {
-        d = e.pcb.time_need + e.pcb.slice_use;
+        d = e.pcb.time_need + e.pcb.slice_cnt;
         switch (e.pcb.state)
         {
         case READY:
@@ -376,14 +431,16 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             break;
         case DEBUG:
             output_mutex.lock();
-            cout << "pid:" << runPCB->pid << ", this is a test proc!" << endl;
+            cout << "pid:" << runPCB->pid << ", this is a test proc! " << runPCB->PC << endl;
             output_mutex.unlock();
             break;
         case BLANK:
             runPCB->PC--;
             break;
         default:
-            cout << runPCB->pid << ": Instruction error" << endl;
+            output_mutex.lock();
+            cout << runPCB->pid << ": Instruction error: " << runPCB->cmdVector[(runPCB->PC)].num << endl;
+            output_mutex.unlock();
             break;
         }
         runPCB->PC++;
@@ -410,8 +467,86 @@ void Process::run(PCB *runPCB) { // 运行函数
     if (!runPCB->time_need)
     {//TODO:释放内存
     }
-    fst_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
+    if (runPCB->pid == RunQueue[0] && runPCB->slice_use!=0) {
+        output_mutex.lock();
+        cout << "PID" << runPCB->pid << " time1 end send" <<endl;
+        output_mutex.unlock();
+        fst_interupt.disable_time_interupt(runPCB->pid);//解除中断定时器
+    }
+        
+    else if (runPCB->slice_use!=0) {
+        output_mutex.lock();
+        cout << "PID" << runPCB->pid << " time2 end send" <<endl;
+        output_mutex.unlock();
+        sec_interupt.disable_time_interupt(runPCB->pid);
+    }
     return ;
+}
+
+void Process::FCFS_run(PCB *runPCB) { // FCFS的运行函数
+    Interupt tmp_interupt;
+    File* temfile = nullptr;
+    char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
+    bool intertemp = true; // 判断是否申请释放设备中断
+    while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
+        switch (runPCB->cmdVector[(runPCB->PC)].num)
+        {
+        case CREAFILE:
+            if(fs->touch(runPCB->cmdVector[(runPCB->PC)].name)){
+                cout << "File created successfully" << endl;
+            }else{
+                cout << "File creation failure" <<endl;
+            }
+            break;
+        case DELEFILE:
+            if (fs->rm(runPCB->cmdVector[(runPCB->PC)].name)){
+                cout << "Deleted file successfully" << endl;
+            } else{
+                cout << "File deletion failure" << endl;
+            }
+            break;
+        case APPLY:
+            tmp_interupt.raise_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
+            intertemp = false;
+            //TODO:schedule:block
+            cout << "Apply for device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
+            return;
+            break;
+        case REALESR:
+            tmp_interupt.disable_device_interupt(runPCB->pid,runPCB->cmdVector[(runPCB->PC)].num2);
+            intertemp = false;
+            cout << "Release device:" << runPCB->cmdVector[(runPCB->PC)].num2 << endl;
+            break;
+        case READ:
+            FileMethod::readByte(runPCB->cmdVector[(runPCB->PC)].name);
+            break;
+        case WRITE:
+            temfile = fs->open(runPCB->cmdVector[(runPCB->PC)].name,0);           
+            strcpy(content, runPCB->cmdVector[(runPCB->PC)].code.c_str());            
+            fs->write(temfile,content,runPCB->cmdVector[(runPCB->PC)].code.length());           
+            fs->close(temfile);
+            delete[] content;
+            break;
+        case MEMORY:
+            //TODO:输出进程占用内存信息
+            break;
+        case DEBUG:
+            output_mutex.lock();
+            cout << "pid:" << runPCB->pid << ", this is a test proc! " << runPCB->PC << endl;
+            output_mutex.unlock();
+            break;
+        case BLANK:
+            runPCB->PC--;
+            break;
+        default:
+            output_mutex.lock();
+            cout << runPCB->pid << ": Instruction error: " << runPCB->cmdVector[(runPCB->PC)].num << endl;
+            output_mutex.unlock();
+            break;
+        }
+        runPCB->PC++;
+        this_thread::sleep_for(std::chrono::seconds(1));
+    }
 }
 
 void Process::setTimer1(int* id) { // 发起计时信号
@@ -419,6 +554,9 @@ void Process::setTimer1(int* id) { // 发起计时信号
 }
 
 void Process::setTimer2(int* id) { // 发起计时信号
+    // output_mutex.lock();
+    // cout << "PID" << *id << " time2 begin send" <<endl;
+    // output_mutex.unlock();
     sec_interupt.raise_time_interupt(*id);
 }
 
