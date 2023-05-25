@@ -89,12 +89,12 @@ int Shell::parse() {
         kernel.create("blank");
         return 1;
     } else if (all_params[0] == "fork") {  // 创建一个进程
-        for (int pos = 1; pos < all_params.size(); pos++)
+        for (int pos = 1; pos < all_params.size(); pos++) 
             kernel.create(all_params[pos]);
         kernel.scheduler();
         return 1;
     } else if (all_params[0] == "FCFS") {
-        for (int pos=1; pos<all_params.size(); pos++)
+        for (int pos=1; pos<all_params.size(); pos++) 
             kernel.create(all_params[pos]);
         kernel.FCFS();
         return 1;

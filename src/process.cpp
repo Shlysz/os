@@ -86,7 +86,6 @@ int Process::kernel_init() {  // 内核初始化
 void Process::scheduler() { // RR调度运行函数
     //发出中断，请求当前系统时间存入变量
     int s_num = ReadyQueue.size() + WaitQueue.size() + RunQueue.size();
-    cout << ReadyQueue.size();
     cout << s_num << " processes start schedule:" << endl; 
     while (s_num) { 
         if (!process_info_queue.empty()) {
@@ -137,8 +136,9 @@ void Process::scheduler() { // RR调度运行函数
     cout << "schedule done!" << endl;
 }
 
-void Process::FCFS() { // FCFS调度函数
-    int to_do = ReadyQueue.size(); // 总共需要调度的进程
+void Process::FCFS() { // FCFS调度函数 
+    int to_do = ReadyQueue.size() + WaitQueue.size(); // 总共需要调度的进程
+    cout << "FCFS schedule for " << to_do << " processes." << endl;
     while (to_do) {
         if (!process_info_queue.empty()) { // 有中断
             auto t = process_info_queue.front();
@@ -157,9 +157,11 @@ void Process::FCFS() { // FCFS调度函数
         else if (!ReadyQueue.empty()) {
             RunQueue.push_back(ReadyQueue[0]);
             ReadyQueue.erase(ReadyQueue.begin());
-            FCFS_run(&Processes[RunQueue[0]].pcb);
+            FCFS_run(&Processes[RunQueue[0]-2].pcb);
         }
+       to_do = ReadyQueue.size(); 
     }
+    cout << "FCFS schedule done" << endl;
 }
 
 int Process::create(string p_name) { //创建进程
@@ -211,7 +213,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     //分配一块内存
 
-    Mmu->lockedalloc(newProcess.pcb.pid);
+    //Mmu->lockedalloc(newProcess.pcb.pid);
     
 
     Processes.push_back(newProcess);
@@ -225,20 +227,20 @@ int Process::create(string p_name) { //创建进程
 void Process::readyforward() { // 准备进程进入工作
     int *a = new int;
     *a = ReadyQueue[0];
-    Processes[*a].pcb.state = RUN;
+    Processes[*a-2].pcb.state = RUN;
     RunQueue.push_back(*a);
     ReadyQueue.erase(ReadyQueue.begin());
     // 每个进程开始 run 线程后再开始计时线程
     if (t1 == 0) {
         t1 = *a;
-        thread sub_proc1(&Process::run, kernel, &Processes[RunQueue.front()-2].pcb); 
+        thread sub_proc1(&Process::run, kernel, &Processes[t1-2].pcb); 
         sub_proc1.detach();
         thread sub1_time_set(&Process::setTimer1, kernel, a);
         sub1_time_set.detach();
     }
     else if (t2 == 0) {
         t2 = *a;
-        thread sub_proc0(&Process::run, kernel, &Processes[RunQueue.back()-2].pcb);
+        thread sub_proc0(&Process::run, kernel, &Processes[t2-2].pcb);
         sub_proc0.detach();
         thread sub2_time_set(&Process::setTimer2, kernel, a);
         sub2_time_set.detach();
@@ -320,7 +322,7 @@ void Process::terminate(int id) { // 从运行进程终结进程
     }
     //内存释放
     // cout << "release"<<endl;
-    Mmu->Memory_release(id);
+    //Mmu->Memory_release(id);
     // //Mmu->Report_realtime();
     // cout << "released"<<endl;
     output_mutex.lock();
@@ -462,8 +464,6 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
 
 void Process::run(PCB *runPCB) { // 运行函数
     //Todo : paging
-    // Interupt tmp_interupt;
-    // tmp_interupt.raise_time_interupt(runPCB->pid);//申请中断定时器
     if(runCmd(runPCB)){
         //cout << "debug info, after r:running process PID:" << runPCB->pid <<"  silece_cnt:" << runPCB->slice_cnt << endl;//输出程序完成，时间等等
     }else{
@@ -477,9 +477,9 @@ void Process::run(PCB *runPCB) { // 运行函数
     }
         
     else if (runPCB->slice_use!=0) {
-        // output_mutex.lock();
-        // cout << "PID" << runPCB->pid << " time2 end send" <<endl;
-        // output_mutex.unlock();
+        output_mutex.lock();
+        cout << "PID" << runPCB->pid << " time2 end send" <<endl;
+        output_mutex.unlock();
         sec_interupt.disable_time_interupt(runPCB->pid);
     }
     return ;
@@ -490,7 +490,7 @@ void Process::FCFS_run(PCB *runPCB) { // FCFS的运行函数
     File* temfile = nullptr;
     char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
     bool intertemp = true; // 判断是否申请释放设备中断
-    while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
+    while (runPCB->PC != (runPCB->cmdVector.size())) {                           
         switch (runPCB->cmdVector[(runPCB->PC)].num)
         {
         case CREAFILE:
@@ -549,16 +549,21 @@ void Process::FCFS_run(PCB *runPCB) { // FCFS的运行函数
         runPCB->PC++;
         this_thread::sleep_for(std::chrono::seconds(1));
     }
+    runPCB->state = TERMINATED;
+    RunQueue.pop_back();
 }
 
 void Process::setTimer1(int* id) { // 发起计时信号
+    output_mutex.lock();
+    cout << "PID" << *id << " time1 begin send" <<endl;
+    output_mutex.unlock();
     fst_interupt.raise_time_interupt(*id);
 }
 
 void Process::setTimer2(int* id) { // 发起计时信号
-    // output_mutex.lock();
-    // cout << "PID" << *id << " time2 begin send" <<endl;
-    // output_mutex.unlock();
+    output_mutex.lock();
+    cout << "PID" << *id << " time2 begin send" <<endl;
+    output_mutex.unlock();
     sec_interupt.raise_time_interupt(*id);
 }
 
