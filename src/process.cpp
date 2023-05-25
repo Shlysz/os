@@ -86,6 +86,7 @@ int Process::kernel_init() {  // 内核初始化
 void Process::scheduler() { // RR调度运行函数
     //发出中断，请求当前系统时间存入变量
     int s_num = ReadyQueue.size() + WaitQueue.size() + RunQueue.size();
+    cout << ReadyQueue.size();
     cout << s_num << " processes start schedule:" << endl; 
     while (s_num) { 
         if (!process_info_queue.empty()) {
@@ -126,7 +127,6 @@ void Process::scheduler() { // RR调度运行函数
                 DoneQueue.push_back(t.first);
                 // 内存释放
             }
-
             //scheduledisplay();   // 可以实现每运行一次中断就打印     
         }
 
