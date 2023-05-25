@@ -2,6 +2,5 @@
 7 1
 5 1 test3 helloworld
 4 1 test3
-1 0 test3
 7 0
 6 1
