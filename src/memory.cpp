@@ -52,9 +52,10 @@ void MMU::initMMU(){
 
 }
 void MMU::seeprocess(){
-    cout << "Now the processes in memory are:"<<endl;
-    
+
+    cout << "Now the processes in memory are:";
     printQueue(Mmu->MidQueue);
+    
 }
 
 void printQueue(std::queue<int> myQueue) {
@@ -72,6 +73,7 @@ void MMU::lockedalloc(int pid){
       Memory_allocate(pid,max_process);
 
 }
+
 
 void MMU::Memory_allocate(int pid,int &max_process){ 
 
@@ -121,12 +123,14 @@ void MMU::Memory_allocate(int pid,int &max_process){
 }
 
 void MMU::Report_realtime(){
-
-    Mlist *p = Mmu->mlist;
-    while(p!=nullptr){
-        cout << p->mid << endl;
-        p = p->next;
-    }
+    cout << "Memory info:"<<endl;
+    Query_memory();
+    seeprocess();
+    // Mlist *p = Mmu->mlist;
+    // while(p!=nullptr){
+    //     cout << p->mid << endl;
+    //     p = p->next;
+    // }
 
 }
 void MMU::Memory_release(int pid){
