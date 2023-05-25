@@ -114,7 +114,7 @@ void Interupt::handle_interupt() {
         interupt_queue.pop();
         if (task.type == 1) {  // 请求时钟
             timer_flag = true;
-            // cout << "PID 为 " << this->pid << " 的进程开启时钟中断!" << endl;
+            // cout << "PID 为 " << task.pid << " 的进程开启时钟中断!" << endl;
             task.timer();
             cout << "PID 为 " << task.pid << " 的进程耗费经过一个时间片!"
                  << endl;
@@ -124,7 +124,7 @@ void Interupt::handle_interupt() {
         } else if (task.type == 2) {  // 停止时钟
             timer_flag = false;
             cout << "PID 为 " << task.pid << " 的进程停止时钟中断!" << endl;
-            // this->disable_time_interupt();
+            // task.disable_time_interupt();
             info_mu.lock();
             process_info_queue.push({task.pid, 1});
             info_mu.unlock();
@@ -169,7 +169,7 @@ void Interupt::handle_interupt() {
                 cout << "PID 为 " << task.pid << " 的进程成功释放设备!" << endl;
             }
         } else if (task.type == 5) {  // 异常
-            // this->raise_panic(this->pid, this->panic_type);
+            // task.raise_panic(task.pid, task.panic_type);
         }
     }
     return;
