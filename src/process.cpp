@@ -433,6 +433,9 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             delete[] content;
             break;
         case MEMORY:
+            cout << "Memory info:"<<endl;
+            Mmu ->Query_memory();
+            Mmu->seeprocess();
             //TODO:输出进程占用内存信息
             break;
         case DEBUG:
@@ -530,6 +533,9 @@ void Process::FCFS_run(PCB *runPCB) { // FCFS的运行函数
             delete[] content;
             break;
         case MEMORY:
+            cout << "memory info:"<<endl;
+            Mmu->seeprocess();
+            Mmu->Query_memory();
             //TODO:输出进程占用内存信息
             break;
         case DEBUG:
