@@ -215,7 +215,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     //分配一块内存
 
-    //Mmu->lockedalloc(newProcess.pcb.pid);
+    Mmu->lockedalloc(newProcess.pcb.pid);
     
 
     Processes.push_back(newProcess);
@@ -324,7 +324,7 @@ void Process::terminate(int id) { // 从运行进程终结进程
     }
     //内存释放
     // cout << "release"<<endl;
-    //Mmu->Memory_release(id);
+    Mmu->Memory_release(id);
     // //Mmu->Report_realtime();
     // cout << "released"<<endl;
     output_mutex.lock();
@@ -437,9 +437,10 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             delete[] content;
             break;
         case MEMORY:
-            cout << "Memory info:"<<endl;
-            Mmu ->Query_memory();
-            Mmu->seeprocess();
+            // cout << "Memory info:"<<endl;
+            // Mmu ->Query_memory();
+            // Mmu->seeprocess();
+            Mmu->Report_realtime();
             //TODO:输出进程占用内存信息
             break;
         case DEBUG:
