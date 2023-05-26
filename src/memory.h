@@ -6,6 +6,7 @@
 #include <set>
 #include <mutex>
 #include <queue>
+#include <fstream>
 using namespace std;
 
 /*
@@ -18,7 +19,7 @@ pagetable item num: 64
 for each process ,init a pagetable and a TLB,and when a process is terminated, release it 
 */
 #define tlbsize 8 // 8B
-#define pagetablesize 64 // 64B a pagetable has 64 pageitem
+#define pagetablesize 4 // 64B a pagetable has 64 pageitem
 #define memory_size 4 * 1024 * 1024 //1 = 1B ,total:4MB 
 #define pagesize  4 * 1024
 #define framesize  4 * 1024
@@ -32,12 +33,16 @@ when the process is terminated, release it
 */
 class Pagetable{
     public:
-    int pagetable_id;  
+    string instrname;
+    int isused = 0;
+    //int pagetable_id;  
     int * page_num = nullptr;
     int * page_phyaddr = nullptr; //frame address
     int * last_used = nullptr;
-    int * diskaddr = nullptr;
+    char instruc[pagetablesize][50];
+    string diskaddr = "";
     int * is_changed = nullptr;
+    //string * instruc;
 };
 
 /*
@@ -53,8 +58,10 @@ class TLB{
     int * page_num = nullptr;
     int * page_phyaddr = nullptr; //frame 
     int * last_used = nullptr;
-    int * diskaddr = nullptr;
+    char instruc[4][20];
+    string diskaddr = "";
     int * is_changed = nullptr;
+    //string * instruc;
 };
 
 /*
@@ -82,17 +89,19 @@ class MMU{
     public:
 
     Mlist *mlist;
+    Pagetable PT1,PT2;
+    //TLB Tlb1 ,Tlb2;
     int total_frame = 1024;
     int total_memory = memory_size;
     int *framearray = nullptr; //pid in it
-    struct v_address{
-        int pagenum;
-        int offset;
-    };
-    struct p_address{
-        int framenum;
-        int offset;
-    };
+    // struct v_address{
+    //     int pagenum;
+    //     int offset;
+    // };
+    // struct p_address{
+    //     int framenum;
+    //     int offset;
+    // };
     queue<int> MidQueue;
     // typedef struct MMUlist{
     //     int mid; //mid = pid
@@ -105,7 +114,7 @@ class MMU{
         total_memory = memory_size;
         framearray = new int[total_frame];
         
-        std::memset(framearray, -1, sizeof(framearray));
+        std::memset(framearray, -1, total_frame * sizeof(int));
         
         // mlist = new Mlist();
         // Mlist *initkernel = new Mlist ();
@@ -136,17 +145,17 @@ class MMU{
         MidQueue.push(1);
     };
 
-    Pagetable initPagetable(int pid);
+    Pagetable initPagetable();
     TLB initTLB(int pid,Pagetable PT);
     void seeprocess();
-    void lockedalloc(int pid);//to process when a process is created
+    void lockedalloc(int pid,string filename);//to process when a process is created
     void initMMU();
     void release_pagetable(Pagetable pt);
     void release_tlb(TLB tlb);
-    void Memory_allocate(int pid,int &max_process);// to process
+    void Memory_allocate(int pid,int &max_process,string filename);// to process
     void Memory_release(int pid);// to process
     void Find_phyaddr(int pid);//to process
-    void LRU_replace(int pid);//to process
+    void LRU_replace(int pid,string filename);//to process
     void Query_memory();//to shell
     void Report_realtime();
     
