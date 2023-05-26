@@ -155,9 +155,11 @@ void MMU::Memory_release(int pid){
         Mmu->total_frame += deletenum ;
         Mmu->total_memory += deletenum * 4 * 1024;
         for (int i = 0; i < 4; ++i) {
-            Mmu->PT1.instruc[i][0] = '\0'; // 将每行的第一个字符设置为字符串终止符
+            Mmu->PT1.instruc[i][0] = '\0'; 
+            Mmu->PT1.last_used[i] = 0;// 将每行的第一个字符设置为字符串终止符
         }
-        release_pagetable(Mmu->PT1);
+        
+        //release_pagetable(Mmu->PT1);
     }
     else if(Mmu->PT2.isused == 1){
         Mmu->PT2.instrname = "\0";
@@ -176,9 +178,10 @@ void MMU::Memory_release(int pid){
         Mmu->total_frame += deletenum ;
         Mmu->total_memory += deletenum * 4 * 1024;
         for (int i = 0; i < 4; ++i) {
-            Mmu->PT2.instruc[i][0] = '\0'; // 将每行的第一个字符设置为字符串终止符
+            Mmu->PT2.instruc[i][0] = '\0'; 
+            Mmu->PT2.last_used[i] = 0;// 将每行的第一个字符设置为字符串终止符
         }
-        release_pagetable(Mmu->PT2);
+        //release_pagetable(Mmu->PT2);
     }
     
     //cout << "Memory of this process is released!"<<endl;
@@ -287,7 +290,7 @@ void MMU::LRU_replace(int pid,string filename1){
         lineCount1++;
     }
     pfs.close();
-    if(lineCount1<5)cout<<"指令全部在内存中，不需要页面置换"<<endl;
+    if(lineCount1 < 5)cout<<"指令全部在内存中，不需要页面置换"<<endl;
     else if(lineCount1>=5){
         if((Mmu->PT1.isused == 1)&&(Mmu->PT1.instrname == filename)){
             std::ifstream cpfs(filename);

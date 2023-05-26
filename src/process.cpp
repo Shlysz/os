@@ -215,7 +215,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     //分配一块内存
 
-    Mmu->lockedalloc(newProcess.pcb.pid);
+   Mmu->lockedalloc(newProcess.pcb.pid,p_name+".txt");
     
 
     Processes.push_back(newProcess);
@@ -398,6 +398,7 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
     File* temfile = nullptr;
     char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
     bool intertemp = true; // 判断是否申请释放设备中断
+    int i = 1;
     while (runPCB->time_need!=0 && runPCB->slice_use < 3&& intertemp){                           
         switch (runPCB->cmdVector[(runPCB->PC)].num)
         {
@@ -441,6 +442,7 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
             // Mmu ->Query_memory();
             // Mmu->seeprocess();
             Mmu->Report_realtime();
+            Mmu->LRU_replace(runPCB->pid,runPCB->name);
             //TODO:输出进程占用内存信息
             break;
         case DEBUG:
@@ -536,9 +538,7 @@ void Process::FCFS_run(PCB *runPCB) { // FCFS的运行函数
             delete[] content;
             break;
         case MEMORY:
-            cout << "memory info:"<<endl;
-            Mmu->seeprocess();
-            Mmu->Query_memory();
+            Mmu->Report_realtime();
             //TODO:输出进程占用内存信息
             break;
         case DEBUG:
