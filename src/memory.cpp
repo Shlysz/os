@@ -43,15 +43,15 @@ void MMU::initMMU(){
     Mmu->PT2.isused = 0;
 }
 
-void MMU::lockedalloc(int pid,string filename){
-      lock_guard<mutex> lock(allocamtx);
-      Memory_allocate(pid,max_process,filename);
+// void MMU::lockedalloc(int pid,string filename){
+//       lock_guard<mutex> lock(allocamtx);
+//       Memory_allocate(pid,filename);
 
-}
+// }
 
 
-void MMU::Memory_allocate(int pid,int &max_process,string filename){ 
-
+void MMU::Memory_allocate(int pid,string filename){ 
+    lock_guard<mutex> lock(allocamtx);
     if(Mmu->total_memory < 64 * 4 * 1024){
         std::cout << "Error:No Enough Memory!" << std::endl;
         return;
@@ -66,21 +66,30 @@ void MMU::Memory_allocate(int pid,int &max_process,string filename){
     int lineCount = 0;
     std::string line;
     int lineIndex = 0;
+    int issame = 0;
     if(Mmu->PT1.isused == 0){
         Mmu->PT1.instrname = filename;
         //cout <<endl<<"now alloc PT1"<<endl;
         Mmu->PT1.isused = 1;
         while (std::getline(file, line)) {
             lineCount++;
-            if (lineIndex < 4) {
+            for(int i = 0;i<4;i++){
+                if (line == Mmu->PT1.instruc[i])
+                {
+                    issame = 1;
+                    break;
+                }
+            }
+            if ((lineIndex < 4)&&(issame == 0)) {
                     std::strncpy(Mmu->PT1.instruc[lineIndex], line.c_str(), 49);
                     Mmu->PT1.instruc[lineIndex][49] = '\0'; // 确保字符串以终止符结尾
                     lineIndex++;
-                    }       
+                    }    
+            else if(issame==1)issame=0;           
         }
         file.close();
         //cout << "line of "+ filename +" is" <<lineCount<<endl;
-        //cout << "instruc in memory is:"<<endl;
+        cout << "instructions in memory is:"<<endl;
         for (int i = 0; i < 4; i++) {
                 if (Mmu->PT1.instruc[i][0] != '\0') {
                 std::cout << Mmu->PT1.instruc[i] << std::endl;
@@ -96,11 +105,19 @@ void MMU::Memory_allocate(int pid,int &max_process,string filename){
         
         while (std::getline(file, line)) {
             lineCount++;
-            if (lineIndex < 4) {
+            for(int i = 0;i<4;i++){
+                if (line == Mmu->PT1.instruc[i])
+                {
+                    issame = 1;
+                    break;
+                }
+            }
+            if ((lineIndex < 4)&& (issame == 0)) {
                     std::strncpy(Mmu->PT2.instruc[lineIndex], line.c_str(), 49);
                     Mmu->PT2.instruc[lineIndex][49] = '\0'; // 确保字符串以终止符结尾
                     lineIndex++;
-                    }       
+                    }    
+            else if(issame ==1)issame ==0;           
         }
         file.close();
         //cout << "line of "+ filename +" is" <<lineCount<<endl;
@@ -140,7 +157,7 @@ void MMU::Memory_release(int pid){
     if(Mmu->PT1.isused == 1){
         Mmu->PT1.instrname = "\0";
         //Mmu->PT1.isused = 0;
-        //cout <<endl<<"now release PT1"<<endl;
+        
         int deletenum = 0;
         Mmu->PT1.isused = 0;
         for (int i = 0; i < 1024; i++) {
@@ -150,22 +167,24 @@ void MMU::Memory_release(int pid){
         }
             if(deletenum > 63)break;
         }
-        //cout<<endl<<Mmu->PT1.isused<<endl;
-        //cout<<endl<<Mmu->PT2.isused<<endl;
+        // cout <<endl<<"now release PT1"<<endl;
+        // cout<<endl<<Mmu->PT1.isused<<endl;
+        // cout<<endl<<Mmu->PT2.isused<<endl;
         Mmu->total_frame += deletenum ;
         Mmu->total_memory += deletenum * 4 * 1024;
         for (int i = 0; i < 4; ++i) {
             Mmu->PT1.instruc[i][0] = '\0'; 
             Mmu->PT1.last_used[i] = 0;// 将每行的第一个字符设置为字符串终止符
         }
-        
+        return;
         //release_pagetable(Mmu->PT1);
     }
-    else if(Mmu->PT2.isused == 1){
+    else if((Mmu->PT1.isused == 0)&&(Mmu->PT2.isused == 1)){
         Mmu->PT2.instrname = "\0";
         Mmu->PT2.isused = 0;
-        //cout<<endl<<Mmu->PT1.isused<<endl;
-        //cout <<endl<<"now release PT2"<<endl;
+        // cout <<endl<<"now release PT2"<<endl;
+        // cout<<endl<<Mmu->PT1.isused<<endl;
+        // cout<<endl<<Mmu->PT2.isused<<endl;
         int deletenum = 0;
         for (int i = 0; i < 1024; i++) {
         if(Mmu->framearray[i]==pid){
@@ -182,6 +201,7 @@ void MMU::Memory_release(int pid){
             Mmu->PT2.last_used[i] = 0;// 将每行的第一个字符设置为字符串终止符
         }
         //release_pagetable(Mmu->PT2);
+        return;
     }
     
     //cout << "Memory of this process is released!"<<endl;
@@ -276,103 +296,7 @@ int findMaxIndex(int array[], int size) {
 }
 
 
-void MMU::LRU_replace(int pid,string filename1){
 
-    /*
-    LRU least recently used page replacement
-    */
-    string filename = filename1 + ".txt";
-    //cout<<"\n\n"+filename+"\n\n";
-    std::ifstream pfs(filename);
-    int lineCount1 = 0;
-    std::string line;
-    while (std::getline(pfs, line)) {
-        lineCount1++;
-    }
-    pfs.close();
-    if(lineCount1 < 5)cout<<"指令全部在内存中，不需要页面置换"<<endl;
-    else if(lineCount1>=5){
-        if((Mmu->PT1.isused == 1)&&(Mmu->PT1.instrname == filename)){
-            std::ifstream cpfs(filename);
-            int lineCount = 0;
-            std::string line;
-            while (std::getline(cpfs, line)) {
-                lineCount++;
-                for(int i=0;i<4;i++)Mmu->PT1.last_used[i]++;
-                if(lineCount > 4){
-                    int index = maxindex(Mmu->PT1.last_used);
-                    std::strncpy(Mmu->PT1.instruc[index], line.c_str(), 49);
-                    Mmu->PT1.instruc[index][49] = '\0';
-                    Mmu->PT1.last_used[index] = 0;
-                }
-            }
-            cout << "instruc1 in memory is:"<<endl;
-            for (int i = 0; i < 4; i++) {
-                    if (Mmu->PT1.instruc[i][0] != '\0') {
-                    std::cout << Mmu->PT1.instruc[i] << std::endl;
-                } else 
-                    break; // 遇到空字符串，退出循环
-                }
-
-            cpfs.close();
-        }
-        else if((Mmu->PT2.isused == 1)&&(Mmu->PT2.instrname == filename)){
-            std::ifstream cpfs(filename);
-            int lineCount = 0;
-            std::string line;
-            while (std::getline(cpfs, line)) {
-                lineCount++;
-                for(int i=0;i<4;i++)Mmu->PT2.last_used[i]++;
-                if(lineCount > 4){
-                    int index = maxindex(Mmu->PT2.last_used);
-                    std::strncpy(Mmu->PT2.instruc[index], line.c_str(), 49);
-                    Mmu->PT2.instruc[index][49] = '\0';
-                    Mmu->PT2.last_used[index] = 0;
-                }
-            }
-            cout << "instruc2 in memory is:"<<endl;
-            for (int i = 0; i < 4; i++) {
-                    if (Mmu->PT2.instruc[i][0] != '\0') {
-                    std::cout << Mmu->PT2.instruc[i] << std::endl;
-                } else 
-                    break; // 遇到空字符串，退出循环
-            }
-            cpfs.close();
-        }
-    }
-    // Mlist *switcher = Mmu->mlist;
-    // while(switcher!=nullptr){
-    //     if(switcher->mid == pid){
-    //         int j = findMaxIndex(switcher->PT.last_used,sizeof(switcher->PT.last_used));
-    //         if(j == -1)return;
-    //         for(int k = 0 ;k < pagetablesize;k++){
-    //             switcher->PT.last_used[k] ++;
-
-    //         }
-    //         for(int k = 0 ;k < tlbsize;k++){
-    //             switcher->TLb.last_used[k]++;
-    //         }
-    //         string probaddr  = "getline";
-    //         for (int k=0;k<pagetablesize;k++){
-    //             if (probaddr == switcher->PT.diskaddr)
-    //                 break;
-    //         }
-    //         switcher->PT.diskaddr = probaddr; 
-    //         switcher->PT.last_used[j] = 0;
-    //         for(int k = 0 ;k < tlbsize;k++){
-    //             if(switcher->PT.page_num[k]==switcher->TLb.page_num[k]){
-    //                 switcher->TLb.diskaddr[k]=switcher->PT.diskaddr[k];
-    //                 switcher->TLb.last_used[k] = switcher->PT.last_used[k];
-    //             }
-
-    //         }
-    //     }
-    
-
-    // }
-   //free(switcher);
-
-}
 
 
 // void MMU::Find_phyaddr(int pid){

@@ -148,11 +148,11 @@ class MMU{
     Pagetable initPagetable();
     TLB initTLB(int pid,Pagetable PT);
     void seeprocess();
-    void lockedalloc(int pid,string filename);//to process when a process is created
+    //void lockedalloc(int pid,string filename);//to process when a process is created
     void initMMU();
     void release_pagetable(Pagetable pt);
     void release_tlb(TLB tlb);
-    void Memory_allocate(int pid,int &max_process,string filename);// to process
+    void Memory_allocate(int pid,string filename);// to process
     void Memory_release(int pid);// to process
     void Find_phyaddr(int pid);//to process
     void LRU_replace(int pid,string filename);//to process

@@ -215,7 +215,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     //分配一块内存
 
-   Mmu->lockedalloc(newProcess.pcb.pid,p_name+".txt");
+    Mmu->Memory_allocate(newProcess.pcb.pid,p_name+".txt");
     
 
     Processes.push_back(newProcess);
