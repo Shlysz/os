@@ -366,7 +366,6 @@ void printQueue(std::queue<int> myQueue) {
 
 void MMU::Report_realtime(){
     cout << "Memory info:"<<endl;
-    cout << "memavailbale"<< mem_available <<endl;
     Query_memory();
     seeprocess();
     // Mlist *p = Mmu->mlist;
