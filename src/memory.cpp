@@ -294,10 +294,111 @@ int findMaxIndex(int array[], int size) {
     }
     return maxIndex;
 }
+void MMU::LRU_replace(int pid,string filename1){
+
+    /*
+    LRU least recently used page replacement
+    */
+    string filename = filename1 + ".txt";
+    //cout<<"\n\n"+filename+"\n\n";
+    std::ifstream pfs(filename);
+    int lineCount1 = 0;
+    std::string line;
+    while (std::getline(pfs, line)) {
+        lineCount1++;
+    }
+    pfs.close();
+    if(lineCount1<5)cout<<"指令全部在内存中，不需要页面置换"<<endl;
+    else if(lineCount1>=5){
+        if((Mmu->PT1.isused == 1)&&(Mmu->PT1.instrname == filename)){
+            std::ifstream cpfs(filename);
+            int lineCount = 0;
+            std::string line;
+            while (std::getline(cpfs, line)) {
+                lineCount++;
+                for(int i=0;i<4;i++)Mmu->PT1.last_used[i]++;
+                if(lineCount > 4){
+                    int index = maxindex(Mmu->PT1.last_used);
+                    std::strncpy(Mmu->PT1.instruc[index], line.c_str(), 49);
+                    Mmu->PT1.instruc[index][49] = '\0';
+                    Mmu->PT1.last_used[index] = 0;
+                }
+            }
+            cout << "instruc1 in memory is:"<<endl;
+            for (int i = 0; i < 4; i++) {
+                    if (Mmu->PT1.instruc[i][0] != '\0') {
+                    std::cout << Mmu->PT1.instruc[i] << std::endl;
+                } else 
+                    break; // 遇到空字符串，退出循环
+                }
+
+            cpfs.close();
+        }
+        else if((Mmu->PT2.isused == 1)&&(Mmu->PT2.instrname == filename)){
+            std::ifstream cpfs(filename);
+            int lineCount = 0;
+            std::string line;
+            while (std::getline(cpfs, line)) {
+                lineCount++;
+                for(int i=0;i<4;i++)Mmu->PT2.last_used[i]++;
+                if(lineCount > 4){
+                    int index = maxindex(Mmu->PT2.last_used);
+                    std::strncpy(Mmu->PT2.instruc[index], line.c_str(), 49);
+                    Mmu->PT2.instruc[index][49] = '\0';
+                    Mmu->PT2.last_used[index] = 0;
+                }
+            }
+            cout << "instruc2 in memory is:"<<endl;
+            for (int i = 0; i < 4; i++) {
+                    if (Mmu->PT2.instruc[i][0] != '\0') {
+                    std::cout << Mmu->PT2.instruc[i] << std::endl;
+                } else 
+                    break; // 遇到空字符串，退出循环
+            }
+            cpfs.close();
+        }
+    }
+
+}
 
 
 
 
+
+void MMU::seeprocess(){
+
+    cout << "Now the processes in memory are:";
+    printQueue(Mmu->MidQueue);
+
+}
+
+void printQueue(std::queue<int> myQueue) {
+    while (!myQueue.empty()) {
+        int frontElement = myQueue.front();
+        std::cout << frontElement << " ";
+        myQueue.pop();
+    }
+    std::cout << std::endl;
+}
+
+void MMU::Report_realtime(){
+    cout << "Memory info:"<<endl;
+    Query_memory();
+    seeprocess();
+    // Mlist *p = Mmu->mlist;
+    // while(p!=nullptr){
+    //     cout << p->mid << endl;
+    //     p = p->next;
+    // }
+
+}
+
+void MMU::Query_memory(){
+    cout <<"pbuse:PT1: "<<Mmu->PT1.isused +" PT2:"<<Mmu->PT2.isused<<endl;
+    float memo = float(Mmu->total_memory/(1024.0*1024));
+    cout << "Size of free memory is "<< memo << "MB" << endl;    
+    cout << "Total memory space is 4MB"<<endl;
+}  
 
 // void MMU::Find_phyaddr(int pid){
     
@@ -348,37 +449,4 @@ int findMaxIndex(int array[], int size) {
 //     free(search);
 // }
 
-void MMU::seeprocess(){
 
-    cout << "Now the processes in memory are:";
-    printQueue(Mmu->MidQueue);
-
-}
-
-void printQueue(std::queue<int> myQueue) {
-    while (!myQueue.empty()) {
-        int frontElement = myQueue.front();
-        std::cout << frontElement << " ";
-        myQueue.pop();
-    }
-    std::cout << std::endl;
-}
-
-void MMU::Report_realtime(){
-    cout << "Memory info:"<<endl;
-    Query_memory();
-    seeprocess();
-    // Mlist *p = Mmu->mlist;
-    // while(p!=nullptr){
-    //     cout << p->mid << endl;
-    //     p = p->next;
-    // }
-
-}
-
-void MMU::Query_memory(){
-    cout <<"pbuse:PT1: "<<Mmu->PT1.isused +" PT2:"<<Mmu->PT2.isused<<endl;
-    float memo = float(Mmu->total_memory/(1024.0*1024));
-    cout << "Size of free memory is "<< memo << "MB" << endl;    
-    cout << "Total memory space is 4MB"<<endl;
-}  
