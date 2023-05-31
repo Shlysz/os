@@ -412,7 +412,7 @@ void MMU::Report_realtime(){
 }
 
 void MMU::Query_memory(){
-    cout <<"pbuse:PT1: "<<Mmu->PT1.isused +" PT2:"<<Mmu->PT2.isused<<endl;
+    //cout <<"pbuse:PT1: "<<Mmu->PT1.isused +" PT2:"<<Mmu->PT2.isused<<endl;
     float memo = float(Mmu->total_memory/(1024.0*1024));
     cout << "Size of free memory is "<< memo << "MB" << endl;    
     cout << "Total memory space is 4MB"<<endl;
