@@ -304,6 +304,7 @@ void MMU::LRU_replace(int pid,string filename1){
     std::ifstream pfs(filename);
     int lineCount1 = 0;
     std::string line;
+    int issame = 0;
     while (std::getline(pfs, line)) {
         lineCount1++;
     }
@@ -313,16 +314,25 @@ void MMU::LRU_replace(int pid,string filename1){
         if((Mmu->PT1.isused == 1)&&(Mmu->PT1.instrname == filename)){
             std::ifstream cpfs(filename);
             int lineCount = 0;
+            
             std::string line;
             while (std::getline(cpfs, line)) {
                 lineCount++;
                 for(int i=0;i<4;i++)Mmu->PT1.last_used[i]++;
-                if(lineCount > 4){
+                for(int i = 0;i<4;i++){
+                if (line == Mmu->PT1.instruc[i])
+                {
+                    issame = 1;
+                    break;
+                }
+            }
+                if((lineCount > 4)&&(issame == 0)){
                     int index = maxindex(Mmu->PT1.last_used);
                     std::strncpy(Mmu->PT1.instruc[index], line.c_str(), 49);
                     Mmu->PT1.instruc[index][49] = '\0';
                     Mmu->PT1.last_used[index] = 0;
                 }
+                else if(issame == 1)issame = 0;
             }
             cout << "instruc1 in memory is:"<<endl;
             for (int i = 0; i < 4; i++) {
@@ -341,12 +351,20 @@ void MMU::LRU_replace(int pid,string filename1){
             while (std::getline(cpfs, line)) {
                 lineCount++;
                 for(int i=0;i<4;i++)Mmu->PT2.last_used[i]++;
-                if(lineCount > 4){
+                for(int i = 0;i<4;i++){
+                if (line == Mmu->PT2.instruc[i])
+                {
+                    issame = 1;
+                    break;
+                }
+                }
+                if((lineCount > 4)&&(issame == 0)){
                     int index = maxindex(Mmu->PT2.last_used);
                     std::strncpy(Mmu->PT2.instruc[index], line.c_str(), 49);
                     Mmu->PT2.instruc[index][49] = '\0';
                     Mmu->PT2.last_used[index] = 0;
                 }
+                else if(issame == 1)issame = 0;
             }
             cout << "instruc2 in memory is:"<<endl;
             for (int i = 0; i < 4; i++) {
