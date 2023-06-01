@@ -11,8 +11,9 @@
 
 ```cpp
 cd src/
-g++ -std=c++17 -O2 *.cpp -o os && ./os
+g++ -std=c++17 -w -O2 *.cpp -o os && ./os
 ```
+Note: If you use a Windows system, please add `-fexec-charset=GBK` to the compilation parameters so that Chinese can be displayed normally in the terminal.
 
 ### License
 The GNU General Public License Version 3
