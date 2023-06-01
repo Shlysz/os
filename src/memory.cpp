@@ -89,15 +89,15 @@ void MMU::Memory_allocate(int pid,string filename){
         }
         file.close();
         //cout << "line of "+ filename +" is" <<lineCount<<endl;
-        cout << "instructions in memory is:"<<endl;
-        for (int i = 0; i < 4; i++) {
-                if (Mmu->PT1.instruc[i][0] != '\0') {
-                std::cout << Mmu->PT1.instruc[i] << std::endl;
-            } else {
-                break; // 遇到空字符串，退出循环
-            }
+        // cout << "instructions in memory is:"<<endl;
+        // for (int i = 0; i < 4; i++) {
+        //         if (Mmu->PT1.instruc[i][0] != '\0') {
+        //         std::cout << Mmu->PT1.instruc[i] << std::endl;
+        //     } else {
+        //         break; // 遇到空字符串，退出循环
+        //     }
                 
-        }
+        // }
     }else{
         Mmu->PT2.instrname = filename;
         Mmu->PT2.isused = 1;
@@ -143,7 +143,7 @@ void MMU::Memory_allocate(int pid,string filename){
             break;
         }
     }
-    cout << "Memory of this process is allocated!"<<endl;
+    // cout << "Memory of this process is allocated!"<<endl;
     // Query_memory();
     // seeprocess();
     
