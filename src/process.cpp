@@ -215,7 +215,7 @@ int Process::create(string p_name) { //创建进程
     newProcess.pcb.state = READY;
     //分配一块内存
 
-    Mmu->Memory_allocate(newProcess.pcb.pid,p_name+".txt");
+    // Mmu->Memory_allocate(newProcess.pcb.pid,p_name+".txt");
     
 
     Processes.push_back(newProcess);
@@ -324,7 +324,7 @@ void Process::terminate(int id) { // 从运行进程终结进程
     }
     //内存释放
     // cout << "release"<<endl;
-    Mmu->Memory_release(id);
+    // Mmu->Memory_release(id);
     // //Mmu->Report_realtime();
     // cout << "released"<<endl;
     output_mutex.lock();
@@ -395,6 +395,7 @@ void Process::signal_min() { // 信号量-
 bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中断等情况则返回1，否则返回0
     //runPCB->PC = 0;
     Interupt tmp_interupt;
+    Mmu->Memory_allocate(runPCB->pid,runPCB->name+".txt");
     File* temfile = nullptr;
     char* content = new char[runPCB->cmdVector[(runPCB->PC)].code.length()+1];
     bool intertemp = true; // 判断是否申请释放设备中断
@@ -467,6 +468,7 @@ bool Process::runCmd(PCB *runPCB){//运行进程的指令，如果没有被中�
         this_thread::sleep_for(std::chrono::seconds(1));
     }
     runPCB->slice_use = 0;
+    Mmu->Memory_release(runPCB->pid);
     return true;
 }
 
