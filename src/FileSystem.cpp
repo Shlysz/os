@@ -55,7 +55,7 @@ void FileSystem::ls(string path) {
             continue;
         }
         string type;
-        if(inode_table[dir->d_inode].i_dirent[i].d_inode==0)  type="目录";
+        if(inode_table[dir->d_inode].i_dirent[i].file_type==0)  type="目录";
         else type="文件";
         cout << inode_table[dir->d_inode].i_dirent[i].d_name << " "
              << type << endl;
