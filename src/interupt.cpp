@@ -16,7 +16,7 @@ void Interupt::raise_panic(int pid, int type) {
     } else if (type == 2) {  // 设备释放失败
         cout << "异常: 设备释放失败" << endl;
     }
-    // this->handle_interupt();
+    this->handle_interupt();
     //  throw "panic";
 }
 
@@ -169,7 +169,7 @@ void Interupt::handle_interupt() {
                 cout << "PID 为 " << task.pid << " 的进程成功释放设备!" << endl;
             }
         } else if (task.type == 5) {  // 异常
-            // task.raise_panic(task.pid, task.panic_type);
+            task.raise_panic(task.pid, task.panic_type);
         }
     }
     return;
